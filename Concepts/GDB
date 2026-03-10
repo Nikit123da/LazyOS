@@ -1,0 +1,5 @@
+Comnnads
+
+add-file-symbol 0x100000 - the address we wanna start
+target remote | qemu-system-x86_64 -hda ./os.bin -gdb stdio -S
+break *<address> / <file.c>:<line>

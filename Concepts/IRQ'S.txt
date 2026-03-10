@@ -1,0 +1,9 @@
+
+PIC Controller parts
+
+MASTER - Controls from IRQ 0 to 7
+SLAVE - Controls from IRQ 8 to 15
+
+MASTER : 0X20 & 0X21
+
+SLAVE  : 0XA0 & 0XA1 

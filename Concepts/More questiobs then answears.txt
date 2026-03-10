@@ -1,0 +1,6 @@
+1.Why exactly start at address 0x7c00
+2.33 bits jump in the beginning for the BIOS parameters block
+3.jump 0:step 2- what is that syntax?                                    Answer : Segment:offset - CPU calculates the physical address using (Segment * 16) + offset 
+4. _start: jmp short start - what is the short thing?
+5. Understand the LBA load better
+

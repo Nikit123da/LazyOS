@@ -1,0 +1,11 @@
+IDT
+--- 
+Table that explains how the interrupts are set on the CPU, lets say someone causes "int 5", the table is to navigate what to do with the interrupt to the interrupt code
+
+https://wiki.osdev.org/Interrupt_Descriptor_Table
+
+The IDT *must* have 256 entries, it can hold more, but the other will be ignorered, and if there's less then it'll generate a General Protection Fault
+
+Each offset is to have a +8 for each offset check here https://wiki.osdev.org/Interrupt_Descriptor_Table
+
+each entry is a pointer to an ISR, which is the adress of where the interrupt function sits.
