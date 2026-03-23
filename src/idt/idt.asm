@@ -43,13 +43,10 @@ idt_load:
 %endmacro
 
 ;Macro wrappers creation
-int_wrapper handle_zero_wrapper, idt_zero  
+;int_wrapper handle_zero_wrapper, idt_zero  
 
 hardwear_interrupts no_interrupt, no_interrupt_handler
 hardwear_interrupts handle_keyboard_interrupt, keyboard_interrupt 
 ;hardwear_interrupts handle_timer_interrupt, timer_interrupt
 
 ;Wrapper funcion export
-
-
-

@@ -19,7 +19,7 @@ SECTIONS
 		*(.data)
 	}	
 
-	.bss : ALIGN(4096)
+	.bss : ALIGN(4096) /*Uninitielized variables at the start*/
 	{
 		*(COMMON)
 		*(.bss)

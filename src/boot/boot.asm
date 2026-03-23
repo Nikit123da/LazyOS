@@ -29,7 +29,7 @@ start:
 ;    int 0x10
 ;    iret 
 
-step2;
+step2:
     cli ; Clear interrupts, for example if the bios doesn't set the adresses correctly, it'll interfeere with the code and linker, so we account for taht making the origin 0, and we set the registers to 0x7c0, that is starting for a bootloader
     mov ax, 0x00
     mov ds, ax

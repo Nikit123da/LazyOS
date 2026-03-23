@@ -5,6 +5,7 @@ global problem ;exports the thing form the asm
 
 extern kernel_main
 
+
 CODE_SEG equ 0x08
 DATA_SEG equ 0x10 
 _start:
@@ -23,7 +24,8 @@ _start:
 
     ;remap the PIC
     cli 
-    call remap_pic
+    ;call remap_pic
+    ;NOTE: made anothere remap in the pic.c file, calling it before anything in main.
     call kernel_main
     
     jmp $ ;jmp forever
@@ -33,6 +35,7 @@ times 512-($ - $$) db 0
 problem:
   mov ax, 0 
   div ax
+
 
 remap_pic:
     mov al, 00010001b

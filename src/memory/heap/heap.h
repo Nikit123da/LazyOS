@@ -1,29 +1,36 @@
 #ifndef HEAP_H
 #define HEAP_H
 
+#include "../../config.h"
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-#define HEAP_START_ADDRESS 0x02000000
+#define HEAP_BLOCK_TABLE_ENTRY_TAKEN 0x01
+#define HEAP_BLOCK_TABLE_ENTRY_FREE 0x00
+
+#define HEAP_START_ADDRESS 0x01000000
 #define PAGE_SIZE 0x01000
 
-typedef struct DList DList;
+#define HEAP_BLOCK_HAS_NEXT 0b10000000
+#define HEAP_BLOCK_IS_FIRST 0b01000000
 
-struct DList {
-  uint32_t length;
-  struct DList *next;
-  struct DList *prev;
-  bool isFree;
-};
+typedef unsigned char HEAP_BLOCK_TABLE_ENTRY;
 
-void init_heap(uint32_t num_of_pages);
+typedef struct {
+  HEAP_BLOCK_TABLE_ENTRY *entries;
+  size_t total_entries;
+} heap_table;
 
-void free(void *address);
+typedef struct {
+  heap_table *table;
+  void *start_addr;
+} heap;
 
-void *malloc(uint32_t size);
+int create_heap(heap *g_heap, void *ptr, void *end, heap_table *table);
 
-void *calloc(uint32_t elements, uint32_t elements_size);
+void heap_free(heap *g_heap, void *address);
 
-void *realloc(void *address, uint32_t size);
+void *heap_malloc(heap *g_heap, size_t size);
 
 #endif

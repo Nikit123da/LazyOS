@@ -32,4 +32,5 @@ void print(char *str);
 void terminal_put_char(uint16_t x, uint16_t y, color color, char ch);
 void terminal_write_char(char c, color color);
 void terminal_clear();
+void Backspace();
 #endif // !VGA_H

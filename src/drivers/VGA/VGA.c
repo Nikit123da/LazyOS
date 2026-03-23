@@ -16,7 +16,7 @@ void terminal_initialize() {
   terminal_col = 0;
   for (int y = 0; y < VGA_HEIGHT; y++) {
     for (int x = 0; x < VGA_WIDTH; x++) {
-      terminal_put_char(x, y, Black, 'd');
+      terminal_put_char(x, y, White, ' ');
     }
   }
 }
@@ -37,7 +37,7 @@ void terminal_put_char(uint16_t x, uint16_t y, color color, char ch) {
 
 void print(char *msg) {
   for (int i = 0; i < strlen(msg); i++) {
-    terminal_write_char(msg[i], Cyan);
+    terminal_write_char(msg[i], White);
   }
 }
 
@@ -61,9 +61,23 @@ void terminal_write_char(char c, color color) {
 void terminal_clear() {
   for (int i = 0; i < VGA_HEIGHT; i++) {
     for (int j = 0; j < VGA_WIDTH; j++) {
-      terminal_put_char(j, i, Black, ' ');
+      terminal_put_char(j, i, White, ' ');
     }
   }
   terminal_col = 0;
   terminal_row = 0;
+}
+
+void Backspace() {
+  if (terminal_col == 0) {
+    terminal_row -= 1;
+    terminal_col = VGA_WIDTH;
+  }
+
+  if (terminal_col == 0 && terminal_row == 0)
+    return;
+
+  terminal_col -= 1;
+  print(" ");
+  terminal_col -= 1;
 }
