@@ -1,6 +1,7 @@
 #ifndef PAGING_H
 #define PAGING_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #define PAGING_CACHE_DISABLED 0b00010000
@@ -14,16 +15,18 @@
 
 typedef struct {
 
-  uint32_t *directory_entry;
+  uint32_t *directory_pointer;
 
-} paging_4gb_chunk;
+} pointer_to_page_directory;
 
 void paging_switch(uint32_t *directory);
 
-paging_4gb_chunk *paging_new_4gb(uint32_t flags);
+pointer_to_page_directory *paging_new_4gb(uint32_t flags);
 
 void enable_paging();
 
-uint32_t *paging_4gb_chunk_get_directory(paging_4gb_chunk *chunk);
-
+int paging_set(uint32_t *directory, void *vertual_addr, uint32_t val);
+int paging_get_indexes(void *virtual_address, uint32_t *directory_index_out,
+                       uint32_t *table_index_out);
+bool paging_is_aligned(void *addr);
 #endif

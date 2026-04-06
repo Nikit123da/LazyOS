@@ -1,218 +1,175 @@
 #include "../../IO/io.h"
 #include "../VGA/VGA.h"
 #include <stdint.h>
-void print_letter(uint8_t scan_code) {
-  switch (scan_code) {
-  case 0x01:
-    print("ESC");
-    break;
-  case 0x3B:
-    print("F1");
-    break;
-  case 0x3C:
-    print("F2");
-    break;
-  case 0x3D:
-    print("F3");
-    break;
-  case 0x3E:
-    print("F4");
-    break;
-  case 0x3F:
-    print("F5");
-    break;
-  case 0x40:
-    print("F6");
-    break;
-  case 0x41:
-    print("F7");
-    break;
-  case 0x42:
-    print("F8");
-    break;
-  case 0x43:
-    print("F9");
-    break;
-  case 0x44:
-    print("F10");
-    break;
-  case 0x57:
-    print("F11");
-    break;
-  case 0x58:
-    print("F12");
-    break;
 
+char return_letter(uint8_t scan_code) {
+  switch (scan_code) {
   // Row: Number row
   case 0x29:
-    print("`");
+    return '`';
     break;
   case 0x02:
-    print("1");
+    return '1';
     break;
   case 0x03:
-    print("2");
+    return '2';
     break;
   case 0x04:
-    print("3");
+    return '3';
     break;
   case 0x05:
-    print("4");
+    return '4';
     break;
   case 0x06:
-    print("5");
+    return '5';
     break;
   case 0x07:
-    print("6");
+    return '6';
     break;
   case 0x08:
-    print("7");
+    return '7';
     break;
   case 0x09:
-    print("8");
+    return '8';
     break;
   case 0x0A:
-    print("9");
+    return '9';
     break;
   case 0x0B:
-    print("0");
+    return '0';
     break;
   case 0x0C:
-    print("-");
+    return '-';
     break;
   case 0x0D:
-    print("=");
+    return '=';
     break;
   case 0x0E:
     Backspace(); // Backspace competability
     break;
 
   // Row: QWERTY
-  case 0x0F:
-    print("TAB");
-    break;
   case 0x10:
-    print("q");
+    return 'q';
     break;
   case 0x11:
-    print("w");
+    return 'w';
     break;
   case 0x12:
-    print("e");
+    return 'e';
     break;
   case 0x13:
-    print("r");
+    return 'r';
     break;
   case 0x14:
-    print("t");
+    return 't';
     break;
   case 0x15:
-    print("y");
+    return 'y';
     break;
   case 0x16:
-    print("u");
+    return 'u';
     break;
   case 0x17:
-    print("i");
+    return 'i';
     break;
   case 0x18:
-    print("o");
+    return 'o';
     break;
   case 0x19:
-    print("p");
+    return 'p';
     break;
   case 0x1A:
-    print("[");
+    return '[';
     break;
   case 0x1B:
-    print("]");
-    break;
-  case 0x2B:
-    print("\\");
+    return ']';
     break;
 
   // Row: ASDF
   case 0x3A:
-    print("CAPS LOCK");
+    // return"CAPS LOCK"; FIX:
     break;
   case 0x1E:
-    print("a");
+    return 'a';
     break;
   case 0x1F:
-    print("s");
+    return 's';
     break;
   case 0x20:
-    print("d");
+    return 'd';
     break;
   case 0x21:
-    print("f");
+    return 'f';
     break;
   case 0x22:
-    print("g");
+    return 'g';
     break;
   case 0x23:
-    print("h");
+    return 'h';
     break;
   case 0x24:
-    print("j");
+    return 'j';
     break;
   case 0x25:
-    print("k");
+    return 'k';
     break;
   case 0x26:
-    print("l");
+    return 'l';
     break;
   case 0x27:
-    print(";");
+    return ';';
     break;
   case 0x28:
-    print("'");
+    return '\'';
     break;
   case 0x1C:
-    print("\n");
+    return '\n';
     break;
   case 0x2C:
-    print("z");
+    return 'z';
     break;
   case 0x2D:
-    print("x");
+    return 'x';
     break;
   case 0x2E:
-    print("c");
+    return 'c';
     break;
   case 0x2F:
-    print("v");
+    return 'v';
     break;
   case 0x30:
-    print("b");
+    return 'b';
     break;
   case 0x31:
-    print("n");
+    return 'n';
     break;
   case 0x32:
-    print("m");
+    return 'm';
     break;
   case 0x33:
-    print(",");
+    return ',';
     break;
   case 0x34:
-    print(".");
+    return '.';
     break;
   case 0x35:
-    print("/");
+    return '/';
     break;
   case 0x36:
-    print("R-SHIFT");
+    // return"R-SHIFT"; // FIX:
     break;
 
   case 0x39:
-    print(" ");
+    return ' ';
     break; // Space
 
   default:
-    print("Unknown Key has been pressed\n");
+    return '\0';
     break;
   }
+
+  return '\0';
 }
 
 void keyboard_callback() {
@@ -223,6 +180,25 @@ void keyboard_callback() {
     return;
   }
 
-  print_letter(scan_code);
+  char ch = return_letter(scan_code);
+  char str[2] = {ch, '\0'};
+
+  print(str);
+
+  if (scan_code == 0x0E) {
+    remove_one_from_buffer();
+  } else if (ch == '\n') {
+    print("inside buffer:");
+    print_buff();
+    print("\n");
+    bufferTestCommand();
+    clearBuffer();
+  } else if (ch != '\0') {
+    inputIntoBuffer(ch);
+  }
+
+  // print("\n");
+  // print("inside buffer: ");
+  // print(buff);
   outb(0x20, 0x20);
 }

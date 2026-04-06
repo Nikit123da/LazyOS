@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "./disk/disk.h"
 #include "./memory/heap/kheap.h"
 #include "./memory/paging/paging.h"
 #include "drivers/VGA/VGA.h"
@@ -9,7 +10,7 @@
 // NOTE: For now keep the Devision by zero error as a halting thing.
 
 extern void problem();
-static paging_4gb_chunk *kernel_chunk = 0;
+static pointer_to_page_directory *PD_ptr = 0;
 void kernel_main() {
   terminal_initialize();
 
@@ -22,19 +23,36 @@ void kernel_main() {
   // print("Paging has been initied\n");// Initialize heap
   print("Initializing the heap...\n");
   kheap_init();
-  print("Heap has been initialized\n");
+  init_keyboard_buffer();
 
   print("Initializing IDT\n");
   idt_init(); // Initialize IDT
   print("IDT has been initialized\n");
   // problem();
-  kernel_chunk = paging_new_4gb(PAGING_IS_WRITABLE | PAGING_IS_PRESENT |
-                                PAGING_ACCESS_FOROM_ALL);
+  PD_ptr = paging_new_4gb(PAGING_IS_WRITABLE | PAGING_IS_PRESENT |
+                          PAGING_ACCESS_FOROM_ALL);
   // swtich to kernel paging chunk
-  paging_switch(paging_4gb_chunk_get_directory(kernel_chunk));
+  paging_switch(PD_ptr->directory_pointer);
 
-  enable_paging();
+  // char *ptr = kzalloc(4096);
+  // paging_set(PD_ptr->directory_pointer, (void *)0x1000,
+  //            (uint32_t)ptr | PAGING_IS_WRITABLE | PAGING_IS_PRESENT |
+  //                PAGING_ACCESS_FOROM_ALL);
+  //
+  // enable_paging();
+  //
+  // char *ptr2 = (char *)0x1000;
+  // ptr2[0] = 'A';
+  // ptr2[1] = 'B';
+  // // ptr[2] = '\n';
+  // print(ptr2);
+  // print(ptr);
 
+  char buff[512];
+  disk_read_secotr(0, 1, buff);
+
+  print(buff);
+  enable_interrupts();
   // void *ptr = kmalloc(50);
   // void *ptr2 = kmalloc(5000);
   // void *ptr3 = kmalloc(5600);
@@ -43,4 +61,5 @@ void kernel_main() {
   // void *ptr5 = kmalloc(50);
   // if (ptr || ptr2 || ptr3 || ptr4 || ptr5) {
   // }
+  terminal_initialize();
 }

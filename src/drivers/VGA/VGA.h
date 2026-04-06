@@ -6,6 +6,7 @@
 #define VGA_WIDTH                                                              \
   80 // TODO: check why exactly it is supposed to be 80 (before was 167)
 #define VGA_HEIGHT 20
+#define KEYBOARD_BUFFER_SIZE 256
 typedef enum {
   Black,
   Blue,
@@ -33,4 +34,11 @@ void terminal_put_char(uint16_t x, uint16_t y, color color, char ch);
 void terminal_write_char(char c, color color);
 void terminal_clear();
 void Backspace();
+
+void init_keyboard_buffer();
+void clearBuffer();
+void inputIntoBuffer(char ch);
+void bufferTestCommand();
+void print_buff();
+void remove_one_from_buffer();
 #endif // !VGA_H

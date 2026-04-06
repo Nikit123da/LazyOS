@@ -6,6 +6,11 @@ section .asm
 ; extern - from c to asm
 
 global idt_load
+global enable_interrupts
+
+enable_interrupts:
+  sti
+  ret
 
 idt_load:
     push ebp
@@ -46,7 +51,7 @@ idt_load:
 ;int_wrapper handle_zero_wrapper, idt_zero  
 
 hardwear_interrupts no_interrupt, no_interrupt_handler
-hardwear_interrupts handle_keyboard_interrupt, keyboard_interrupt 
-;hardwear_interrupts handle_timer_interrupt, timer_interrupt
+hardwear_interrupts irq1, keyboard_interrupt 
+hardwear_interrupts irq0, timer_interrupt
 
 ;Wrapper funcion export

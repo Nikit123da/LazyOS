@@ -69,6 +69,8 @@ void terminal_clear() {
 }
 
 void Backspace() {
+  // TODO: make the backspace functionality to go to the word that is white, not
+  // go over all the black blank spaces.
   if (terminal_col == 0) {
     terminal_row -= 1;
     terminal_col = VGA_WIDTH;

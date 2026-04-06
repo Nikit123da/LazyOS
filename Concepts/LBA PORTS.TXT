@@ -1,0 +1,14 @@
+0x1F7 is the command/status port — it's like pressing "Enter". But before you press Enter, you need to have already told the drive:
+
+Which sector do you want? (that's 0x1F3, 0x1F4, 0x1F5)
+How many sectors? (that's 0x1F2)
+Which drive? (that's 0x1F6)
+
+You fill these first:       Then you trigger:
+┌──────────────────┐        ┌──────────────────┐
+│ 0x1F2  count     │        │                  │
+│ 0x1F3  LBA low   │  ───►  │ 0x1F7  command   │  ◄─ "GO!"
+│ 0x1F4  LBA mid   │        │                  │
+│ 0x1F5  LBA high  │        └──────────────────┘
+│ 0x1F6  drive     │
+└──────────────────┘

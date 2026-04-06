@@ -59,7 +59,7 @@ extern softwear_interrupt_handler
 isr_common_stub:
     ; Already pushed: ss, esp, eflags, cs, eip, err_code, int_no
     
-    pusha              ; Push edi, esi, ebp, esp, ebx, edx, ecx, eax
+    pusha              ; Push all registers 
     
     mov ax, ds
     push eax           ; Push ds

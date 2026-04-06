@@ -1,6 +1,7 @@
 #include "kheap.h"
 #include "../../config.h"
 #include "../../drivers/VGA/VGA.h"
+#include "../../status.h"
 #include "../memory.h"
 #include "heap.h"
 
@@ -24,7 +25,7 @@ void kheap_init() {
     return;
   }
 
-  print("Heap Initialized");
+  print("Heap Initialized \n");
 }
 
 void *kmalloc(size_t size) { return heap_malloc(&kernel_heap, size); }
@@ -32,6 +33,7 @@ void *kmalloc(size_t size) { return heap_malloc(&kernel_heap, size); }
 void kfree(void *ptr) { heap_free(&kernel_heap, ptr); }
 
 void *kzalloc(size_t size) {
+  // fills the alocatad space with dummy zeors
   void *ptr = kmalloc(size);
   if (!ptr)
     return 0;

@@ -8,9 +8,6 @@
 #include "./ISR/isr.h"
 #include <stdint.h>
 // NOTE: masked = disabled
-//  NOTE: I need a wrapper around the interrupt because I need to do an iret. Im
-//   not sure why.
-
 // NOTE: extern keyword - bring a routine from assembly to C
 
 struct idt_desc
@@ -20,18 +17,22 @@ struct idtr_desc idtr_descriptor;
 extern void
 idt_load(struct idtr_desc *ptr); // helps debugging to put the struct
 
-/*WRAPPERS*/
-
-extern void handle_keyboard_interrupt();
-extern void handle_timer_interrupt() {};
-extern void no_interrupt();
+extern void enable_interrupts();
 
 /*HANDLER FUNCTIONS*/
 
+void timer_interrupt() {
+  init_pit(100);
+  // timer_handler();
+}
 void keyboard_interrupt() { keyboard_callback(); }
-
 void no_interrupt_handler() { outb(0x20, 0x20); } // val 00100000
-// void timer_interrupt() { init_pit(1000); }
+
+/*WRAPPERS*/
+
+extern void irq0();
+extern void irq1();
+extern void no_interrupt();
 
 void idt_set(int interrupt_num, void *address) {
   struct idt_desc *desc = &idt_descriptors[interrupt_num];
@@ -69,27 +70,26 @@ void idt_init() {
   idt_set(0xD, isr13);
   idt_set(0xE, isr14);
   idt_set(0xF, isr15);
-  idt_set(0x010, isr16);
-  idt_set(0x011, isr17);
-  idt_set(0x012, isr18);
-  idt_set(0x013, isr19);
-  idt_set(0x014, isr20);
-  idt_set(0x015, isr21);
-  idt_set(0x016, isr22);
-  idt_set(0x017, isr23);
-  idt_set(0x018, isr24);
-  idt_set(0x019, isr25);
-  idt_set(0x01A, isr26);
-  idt_set(0x01B, isr27);
-  idt_set(0x01C, isr28);
-  idt_set(0x01D, isr29);
-  idt_set(0x01E, isr30);
-  idt_set(0x01F, isr31);
+  idt_set(0x10, isr16);
+  idt_set(0x11, isr17);
+  idt_set(0x12, isr18);
+  idt_set(0x13, isr19);
+  idt_set(0x14, isr20);
+  idt_set(0x15, isr21);
+  idt_set(0x16, isr22);
+  idt_set(0x17, isr23);
+  idt_set(0x18, isr24);
+  idt_set(0x19, isr25);
+  idt_set(0x1A, isr26);
+  idt_set(0x1B, isr27);
+  idt_set(0x1C, isr28);
+  idt_set(0x1D, isr29);
+  idt_set(0x1E, isr30);
+  idt_set(0x1F, isr31);
 
-  // idt_set(0x20, handle_timer_interrupt);
-  idt_set(0x21, handle_keyboard_interrupt);
+  idt_set(0x20, irq0);
+  idt_set(0x21, irq1);
 
   // load the idt_desc
   idt_load(&idtr_descriptor);
-  asm("sti"); // enable interrupts after initializing the IDT fully/
 }

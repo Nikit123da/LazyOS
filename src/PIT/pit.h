@@ -7,5 +7,6 @@
 #define PIT_IO_PORT 0x40
 
 void init_pit(uint32_t frequancy);
+void timer_handler();
 
 #endif // !PIT_H
