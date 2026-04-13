@@ -8,6 +8,9 @@
 #include <stdint.h>
 // TODO: Next is to initialized the PMM or the HEAP.
 // NOTE: For now keep the Devision by zero error as a halting thing.
+// TODO: Maybe add rings to the program
+
+// FILE SYSTEM -> PROCESSES -> PAGING WITH THE PROCESSES
 
 extern void problem();
 static pointer_to_page_directory *PD_ptr = 0;

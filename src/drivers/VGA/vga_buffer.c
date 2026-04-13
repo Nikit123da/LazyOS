@@ -52,7 +52,7 @@ void bufferTestCommand() {
   } else if (strcomp(buff, "clear")) {
     terminal_initialize();
   } else {
-    print("Command not recognized");
+    print("Command not recognized\n");
   }
 }
 

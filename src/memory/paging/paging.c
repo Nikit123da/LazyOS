@@ -2,6 +2,7 @@
 #include "../../status.h"
 #include "../heap/kheap.h"
 #include <stdint.h>
+// TODO: clock algirithm for paging
 
 extern void paging_load_directory(uint32_t *directory);
 static uint32_t *current_directory = 0;
