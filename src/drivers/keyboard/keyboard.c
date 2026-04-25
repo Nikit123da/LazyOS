@@ -2,6 +2,8 @@
 #include "../VGA/VGA.h"
 #include <stdint.h>
 
+// https://aeb.win.tue.nl/linux/kbd/scancodes-1.html
+
 char return_letter(uint8_t scan_code) {
   switch (scan_code) {
   // Row: Number row

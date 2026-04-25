@@ -1,4 +1,4 @@
-FILES = ./build/kernel.asm.o ./build/kernel.o ./build/idt/idt.asm.o ./build/idt/idt.o ./build/memory/memory.o ./build/IO/io.asm.o ./build/PIT/pit.o ./build/drivers/VGA/VGA.o ./build/drivers/keyboard/keyboard.o ./build/idt/ISR/isr.o ./build/idt/ISR/isr.asm.o ./build/idt/PIC/pic.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/disk/disk.o ./build/drivers/VGA/vga_buffer.o
+FILES = ./build/kernel.asm.o ./build/kernel.o ./build/idt/idt.asm.o ./build/idt/idt.o ./build/memory/memory.o ./build/IO/io.asm.o ./build/PIT/pit.o ./build/drivers/VGA/VGA.o ./build/drivers/keyboard/keyboard.o ./build/idt/ISR/isr.o ./build/idt/ISR/isr.asm.o ./build/idt/PIC/pic.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/disk/disk.o ./build/disk/streamer.o ./build/drivers/VGA/vga_buffer.o ./build/str/str.o ./build/fs/pparser.o ./build/clock/clock.o ./build/drivers/VGA/system_commands.o
 
 
 INCLUDES = -I./src 
@@ -69,8 +69,23 @@ all: ./bin/boot.bin ./bin/kernel.bin
 ./build/disk/disk.o: ./src/disk/disk.c
 	i686-elf-gcc $(INCLUDES) -I./src/disk $(FLAGS) -std=gnu99 -c ./src/disk/disk.c -o ./build/disk/disk.o
 
+./build/disk/streamer.o: ./src/disk/streamer.c
+	i686-elf-gcc $(INCLUDES) -I./src/disk $(FLAGS) -std=gnu99 -c ./src/disk/streamer.c -o ./build/disk/streamer.o
+
 ./build/drivers/VGA/vga_buffer.o: ./src/drivers/VGA/vga_buffer.c
-	i686-elf-gcc $(INCLUDES) -I./src/drivers/VGA $(FLAGS) -std=gnu99 -c ./src/drivers/VGA/vga_buffer.c -o ./build/drivers/VGA/vga_buffer.o
+	i686-elf-gcc $(INCLUDES) -I./src/drivers/VGA/ $(FLAGS) -std=gnu99 -c ./src/drivers/VGA/vga_buffer.c -o ./build/drivers/VGA/vga_buffer.o
+
+./build/str/str.o: ./src/str/str.c
+	i686-elf-gcc $(INCLUDES) -I./src/ $(FLAGS) -std=gnu99 -c ./src/str/str.c -o ./build/str/str.o
+
+./build/fs/pparser.o: ./src/fs/pparser.c
+	i686-elf-gcc $(INCLUDES) -I./src/fs/ $(FLAGS) -std=gnu99 -c ./src/fs/pparser.c -o ./build/fs/pparser.o
+
+./build/clock/clock.o: ./src/clock/clock.c
+	i686-elf-gcc $(INCLUDES) -I./src/clock/ $(FLAGS) -std=gnu99 -c ./src/clock/clock.c -o ./build/clock/clock.o
+
+./build/drivers/VGA/system_commands.o: ./src/drivers/VGA/system_commands.c
+	i686-elf-gcc $(INCLUDES) -I./src/drivers/VGA/ $(FLAGS) -std=gnu99 -c ./src/drivers/VGA/system_commands.c -o ./build/drivers/VGA/system_commands.o
 
 clean:
 	rm -rf ./bin/boot.bin

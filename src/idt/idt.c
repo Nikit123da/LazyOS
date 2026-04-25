@@ -47,6 +47,7 @@ void idt_set(int interrupt_num, void *address) {
 }
 
 void idt_init() {
+  print("Initializing IDT\n");
   memset(idt_descriptors, 0, sizeof(idt_descriptors));
   idtr_descriptor.limit = sizeof(idt_descriptors) - 1;
   idtr_descriptor.base = (uint32_t)idt_descriptors;
@@ -92,4 +93,5 @@ void idt_init() {
 
   // load the idt_desc
   idt_load(&idtr_descriptor);
+  print("IDT has been initialized\n");
 }

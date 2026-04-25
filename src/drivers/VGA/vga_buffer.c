@@ -1,8 +1,8 @@
 #include "../../memory/heap/kheap.h"
 #include "../../memory/memory.h"
+#include "../../str/str.h"
 #include "VGA.h"
-#include <stdbool.h>
-#include <stdint.h>
+#include "system_commands.h"
 static uint8_t position = 0;
 
 char *buff = NULL;
@@ -30,27 +30,13 @@ void remove_one_from_buffer() {
   position -= 1;
 }
 
-bool strcomp(char *str1, char *str2) {
-  if (strlen(str1) != strlen(str2)) {
-    return false;
-  }
-
-  while (*str1 != '\0' || *str2 != '\0') {
-    if (*str1 != *str2) {
-      return false;
-    }
-    str1++;
-    str2++;
-  }
-
-  return true;
-}
-
 void bufferTestCommand() {
   if (strcomp(buff, "test")) {
-    print("testing the buffer\n");
+    test_com();
   } else if (strcomp(buff, "clear")) {
-    terminal_initialize();
+    terminal_clear();
+  } else if (strcomp(buff, "get-time")) {
+    get_time();
   } else {
     print("Command not recognized\n");
   }

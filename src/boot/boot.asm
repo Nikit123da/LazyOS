@@ -6,42 +6,44 @@ CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 ; Some bios override the first 33 bytes of data
 
-_start: 
-    jmp short start 
-    nop ; no operation
+;FAT12 header
+;The first 3 bytes of the header
+jmp short start 
+nop ; no operation
 
-times 33 db 0 ; creates 33 bites after the previous jump for the BIOS parameter block, so it wont override data
-;makes the code segment 0x7c0
+OEMIdentifier     db 'LAZYOS  '
+BytesPerSector    dw 512 ;512 bytes
+SectorsPerCluster db 1
+ReservedSectors   dw 150 ;For the kernel
+FATCopies         db 2
+RoodDirEntries    dw 160
+NumSectors        dw 2880
+MediaType         db 0xF0
+SectorsPerFat     dw 10
+SectorsPerTrack   dw 18
+NumOfHeads        dw 2
+HiddenSectors     dd 0
+
+;Extended BPB
+DriveNumber db 0x80
+WinNTBit    db 0x00
+Signature   db 0x29
+VolumeID    dd 0x00
+VolumeIDString db 'LAZYOS BOOT'
+SystemIDString db 'FAT12   '
+
+
 start:
     jmp 0:step2 
 
-;handle_zero: 
-;    mov ah, 0eh
-;    mov al, 'Z'
-;    mov bx, 0x00
-;    int 0x10
-;    iret 
-
-;handle_one:
-;    mov ah, 0eh
-;    mov al, 'V'
-;    mov bx, 0x00
-;    int 0x10
-;    iret 
-
 step2:
-    cli ; Clear interrupts, for example if the bios doesn't set the adresses correctly, it'll interfeere with the code and linker, so we account for taht making the origin 0, and we set the registers to 0x7c0, that is starting for a bootloader
+    cli
     mov ax, 0x00
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7c00
-    sti ; Enables interrupts
-
-    ;mov word[ss:0x00], handle_zero ;first interupt (iterrupt zero)
-    ;mov word[ss:0x02], 0x7c0
-
-  ;int 2 ; if we call int 1 it'll call for the second sector of 4 bytes, whuch we assigned the interrupt "handle_one", and if we call int 0 then it'll execute interrupt 0, "handle_zero"
+    sti
 
   .load_protected:
       cli ;clear interrupts
@@ -97,7 +99,7 @@ load32:
 
 ata_lba_read:
 ;https://stackoverflow.com/questions/3215878/what-are-in-out-instructions-in-x86-used-for
-;;All registers here contain 32 bit.
+;All registers here contain 32 bit.
     mov ebx, eax ;Backup the LBA 
     ; send the highest 8 bits of the lba to the hard disk controller
     shr eax, 24 ;shift to the right, after the shift contain highest LBA
@@ -159,16 +161,6 @@ ata_lba_read:
     ret
 
 
-times 510-($ - $$) db 0 ;*says that we need to fill at least 510 bytes if data in our code, if we dont use all the 510 bytes pads with 0's, if we do use all the 510 then nothing happens
-dw 0XAA55 ;*
+times 510-($ - $$) db 0
+dw 0XAA55 
 
-;buffer: 
-
-;! commands: 
-;nasm -f bin ./boot.asm -o ./boot.bin - compile into binary
-
-;qemu-system-x86_64 -hda ./boot.bin - run in the qemu
-
-;target remote | qemu-system-x86_64 -hda ./boot.bin -S -gdb stdio
-
-;bless <file to see its machine code>

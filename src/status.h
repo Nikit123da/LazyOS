@@ -5,5 +5,6 @@
 #define LAZYOS_IO_ERROR 1
 #define EINVARG 2
 #define NO_MEMORY 3
-
+#define EBADPATH 4
+#define EIO 5
 #endif

@@ -1,6 +1,12 @@
 #include "disk.h"
 #include "../IO/io.h"
+#include "../config.h"
+#include "../memory/memory.h"
+#include "../status.h"
 // NOTE: maybe add an inode.
+
+disk dsk;
+
 int disk_read_secotr(int lba, int total, void *buff) {
   outb(0x1f6, (lba >> 24) | 0xE0); // asks for the primary disk with 0xE0
   outb(0x1f2, total);              // how many sectors to read
@@ -24,4 +30,26 @@ int disk_read_secotr(int lba, int total, void *buff) {
     }
   }
   return 0;
+}
+
+void disk_search_and_init() {
+  memset(&dsk, 0, sizeof(disk));
+  dsk.type = LAZYOS_DISK_TYPE_REAL;
+  dsk.sector_size = LAZYOS_SECTOR_SIZE;
+}
+
+disk *disk_get(int index) {
+  if (index != 0) {
+    return 0;
+  }
+
+  return &dsk;
+}
+
+int disk_read_block(disk *idisk, unsigned int lba, int total, void *buff) {
+  if (idisk != &dsk) {
+    return -EIO;
+  }
+
+  return disk_read_secotr(lba, total, buff);
 }

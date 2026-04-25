@@ -10,6 +10,7 @@ heap kernel_heap;
 heap_table kernel_heap_table;
 
 void kheap_init() {
+  print("Initializing the heap...\n");
   uint32_t total_table_entries =
       LAZYOS_HEAP_SIZE_BYTES / LAZYOS_HEAP_BLOCK_SIZE;
   kernel_heap_table.entries =

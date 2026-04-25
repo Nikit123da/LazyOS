@@ -1,7 +1,9 @@
 #include "pic.h"
 #include "../../IO/io.h"
-
+#include "../../drivers/VGA/VGA.h"
 void PIC_remap(int offset1) {
+
+  print("Remaping PIC...\n");
   outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
   outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
   outb(PIC1_DATA, offset1);          // ICW2: Master PIC vector offset
@@ -16,4 +18,5 @@ void PIC_remap(int offset1) {
   // Unmask both PICs.
   outb(PIC1_DATA, 0);
   outb(PIC2_DATA, 0);
+  print("PIC has been remapped\n");
 }
