@@ -1,5 +1,5 @@
 ENTRY(_start)  /*Entry point*/
-OUTPUT_FORMAT(binary)
+OUTPUT_FORMAT(elf32-i386)
 SECTIONS
 {
 	. = 1M; /*We load 1 megabite of the kernel into memory*/
@@ -17,7 +17,7 @@ SECTIONS
 	.data : ALIGN(4096)
 	{
 		*(.data)
-	}	
+	}
 
 	.bss : ALIGN(4096) /*Uninitielized variables at the start*/
 	{
@@ -29,5 +29,7 @@ SECTIONS
 	{
 		*(.asm)
 	}
+
+   /* _kernel_end = .; /*if i'll ever need  */ 
 }
 

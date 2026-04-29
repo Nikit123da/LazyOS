@@ -34,9 +34,6 @@ int create_heap(heap *g_heap, void *ptr, void *end, heap_table *table) {
   memset(g_heap, 0, sizeof(*g_heap));
   g_heap->start_addr = ptr;
   g_heap->table = table;
-  // NOTE: the address of the table and the start are set correctly in the
-  // g_heap
-
   res = heap_validate_table(ptr, end, table);
 
   if (!(res < 0)) { // no error

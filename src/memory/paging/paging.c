@@ -74,7 +74,8 @@ int paging_get_indexes(void *virtual_address, uint32_t *directory_index_out,
 /*
   sets the page table entry to the value which is the addres i guess
 */
-int paging_set(uint32_t *directory, void *virtual_addr, uint32_t val) {
+int paging_set(uint32_t *directory, void *virtual_addr,
+               uint32_t physical_addr) {
   if (!paging_is_aligned(virtual_addr)) {
     return -EINVARG;
   }
@@ -92,7 +93,7 @@ int paging_set(uint32_t *directory, void *virtual_addr, uint32_t val) {
       (uint32_t *)(entry &
                    0xfffff000); // 20 most right bits, which is the address, now
                                 // we need to set the flags.
-  table[table_index] = val;
+  table[table_index] = physical_addr;
 
   return res;
 }

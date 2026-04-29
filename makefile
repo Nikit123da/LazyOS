@@ -1,4 +1,4 @@
-FILES = ./build/kernel.asm.o ./build/kernel.o ./build/idt/idt.asm.o ./build/idt/idt.o ./build/memory/memory.o ./build/IO/io.asm.o ./build/PIT/pit.o ./build/drivers/VGA/VGA.o ./build/drivers/keyboard/keyboard.o ./build/idt/ISR/isr.o ./build/idt/ISR/isr.asm.o ./build/idt/PIC/pic.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/disk/disk.o ./build/disk/streamer.o ./build/drivers/VGA/vga_buffer.o ./build/str/str.o ./build/fs/pparser.o ./build/clock/clock.o ./build/drivers/VGA/system_commands.o
+FILES = ./build/kernel.asm.o ./build/kernel.o ./build/idt/idt.asm.o ./build/idt/idt.o ./build/memory/memory.o ./build/IO/io.asm.o ./build/PIT/pit.o ./build/drivers/VGA/VGA.o ./build/drivers/keyboard/keyboard.o ./build/idt/ISR/isr.o ./build/idt/ISR/isr.asm.o ./build/idt/PIC/pic.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/disk/disk.o ./build/disk/streamer.o ./build/drivers/VGA/vga_buffer.o ./build/str/str.o ./build/fs/pparser.o ./build/clock/clock.o ./build/drivers/VGA/system_commands.o ./build/memory/paging/PMM/pmm.o ./build/e820_mmap/e820_mmap.o
 
 
 INCLUDES = -I./src 
@@ -8,85 +8,119 @@ all: ./bin/boot.bin ./bin/kernel.bin
 	rm -rf ./bin/os.bin
 	dd if=./bin/boot.bin >> ./bin/os.bin
 	dd if=./bin/kernel.bin >> ./bin/os.bin
-	dd if=/dev/zero bs=512 count=100 >> ./bin/os.bin
+	dd if=/dev/zero bs=512 count=200 >> ./bin/os.bin
+
+# ./bin/kernel.bin: $(FILES)
+# 	i686-elf-ld -g -relocatable $(FILES) -o ./build/kernelfull.o
+# 	i686-elf-gcc $(FLAGS) -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib ./build/kernelfull.o
 
 ./bin/kernel.bin: $(FILES)
-	i686-elf-ld -g -relocatable $(FILES) -o ./build/kernelfull.o
-	i686-elf-gcc $(FLAGS) -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib ./build/kernelfull.o
+	i686-elf-ld -g $(FILES) -T ./src/linker.ld -o ./build/kernelfull.elf
+	objcopy -O binary ./build/kernelfull.elf ./bin/kernel.bin
 
-
+#boot
 ./bin/boot.bin: ./src/boot/boot.asm
 	nasm -f bin ./src/boot/boot.asm -o ./bin/boot.bin
 
+#kernel.asm
 ./build/kernel.asm.o: ./src/kernel.asm
 	nasm -f elf -g ./src/kernel.asm -o ./build/kernel.asm.o
 
+#kernel
 ./build/kernel.o: ./src/kernel.c
 	i686-elf-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/kernel.c -o ./build/kernel.o
 
+#VGA
 ./build/drivers/VGA/VGA.o: ./src/drivers/VGA/VGA.c
 	i686-elf-gcc $(INCLUDES) -I./src/drivers/VGA $(FLAGS) -std=gnu99 -c ./src/drivers/VGA/VGA.c -o ./build/drivers/VGA/VGA.o
 
+#idt.asm
 ./build/idt/idt.asm.o: ./src/idt/idt.asm
 	nasm -f elf -g ./src/idt/idt.asm -o ./build/idt/idt.asm.o
 
+#idt
 ./build/idt/idt.o: ./src/idt/idt.c
 	i686-elf-gcc $(INCLUDES) -I./src/idt $(FLAGS) -std=gnu99 -c ./src/idt/idt.c -o ./build/idt/idt.o
 
+#memory
 ./build/memory/memory.o: ./src/memory/memory.c
 	i686-elf-gcc $(INCLUDES) -I./src/memory $(FLAGS) -std=gnu99 -c ./src/memory/memory.c -o ./build/memory/memory.o
 
+#io.asm
 ./build/IO/io.asm.o: ./src/IO/io.asm
 	nasm -f elf -g ./src/IO/io.asm -o ./build/IO/io.asm.o
 
+#pit
 ./build/PIT/pit.o: ./src/PIT/pit.c
 	i686-elf-gcc $(INCLUDES) -I./src/PIT $(FLAGS) -std=gnu99 -c ./src/PIT/pit.c -o ./build/PIT/pit.o
 
+#keyboard
 ./build/drivers/keyboard/keyboard.o: ./src/drivers/keyboard/keyboard.c
 	i686-elf-gcc $(INCLUDES) -I./src/drivers/keyboard $(FLAGS) -std=gnu99 -c ./src/drivers/keyboard/keyboard.c -o ./build/drivers/keyboard/keyboard.o
 
+#isr
 ./build/idt/ISR/isr.o: ./src/idt/ISR/isr.c
 	i686-elf-gcc $(INCLUDES) -I./src/idt/ISR $(FLAGS) -std=gnu99 -c ./src/idt/ISR/isr.c -o ./build/idt/ISR/isr.o
 
+#isr.asm
 ./build/idt/ISR/isr.asm.o: ./src/idt/ISR/isr.asm
 	nasm -f elf -g ./src/idt/ISR/isr.asm -o ./build/idt/ISR/isr.asm.o
 
+#pic
 ./build/idt/PIC/pic.o: ./src/idt/PIC/pic.c
 	i686-elf-gcc $(INCLUDES) -I./src/idt/PIC $(FLAGS) -std=gnu99 -c ./src/idt/PIC/pic.c -o ./build/idt/PIC/pic.o
 
+#paging
 ./build/memory/paging/paging.o: ./src/memory/paging/paging.c
 	i686-elf-gcc $(INCLUDES) -I./src/memory/paging/ $(FLAGS) -std=gnu99 -c ./src/memory/paging/paging.c -o ./build/memory/paging/paging.o
 
+#paging.asm
 ./build/memory/paging/paging.asm.o: ./src/memory/paging/paging.asm
 	nasm -f elf -g ./src/memory/paging/paging.asm -o ./build/memory/paging/paging.asm.o
 
+#heap
 ./build/memory/heap/heap.o: ./src/memory/heap/heap.c
 	i686-elf-gcc $(INCLUDES) -I./src/memory/heap $(FLAGS) -std=gnu99 -c ./src/memory/heap/heap.c -o ./build/memory/heap/heap.o
 
+#kheap
 ./build/memory/heap/kheap.o: ./src/memory/heap/kheap.c
 	i686-elf-gcc $(INCLUDES) -I./src/memory/heap $(FLAGS) -std=gnu99 -c ./src/memory/heap/kheap.c -o ./build/memory/heap/kheap.o
 
+#disk
 ./build/disk/disk.o: ./src/disk/disk.c
 	i686-elf-gcc $(INCLUDES) -I./src/disk $(FLAGS) -std=gnu99 -c ./src/disk/disk.c -o ./build/disk/disk.o
 
+#streamer
 ./build/disk/streamer.o: ./src/disk/streamer.c
 	i686-elf-gcc $(INCLUDES) -I./src/disk $(FLAGS) -std=gnu99 -c ./src/disk/streamer.c -o ./build/disk/streamer.o
 
+#vga_buffer
 ./build/drivers/VGA/vga_buffer.o: ./src/drivers/VGA/vga_buffer.c
 	i686-elf-gcc $(INCLUDES) -I./src/drivers/VGA/ $(FLAGS) -std=gnu99 -c ./src/drivers/VGA/vga_buffer.c -o ./build/drivers/VGA/vga_buffer.o
 
+#str
 ./build/str/str.o: ./src/str/str.c
 	i686-elf-gcc $(INCLUDES) -I./src/ $(FLAGS) -std=gnu99 -c ./src/str/str.c -o ./build/str/str.o
 
+#pparser
 ./build/fs/pparser.o: ./src/fs/pparser.c
 	i686-elf-gcc $(INCLUDES) -I./src/fs/ $(FLAGS) -std=gnu99 -c ./src/fs/pparser.c -o ./build/fs/pparser.o
 
+#clock
 ./build/clock/clock.o: ./src/clock/clock.c
 	i686-elf-gcc $(INCLUDES) -I./src/clock/ $(FLAGS) -std=gnu99 -c ./src/clock/clock.c -o ./build/clock/clock.o
 
+#system_commands
 ./build/drivers/VGA/system_commands.o: ./src/drivers/VGA/system_commands.c
 	i686-elf-gcc $(INCLUDES) -I./src/drivers/VGA/ $(FLAGS) -std=gnu99 -c ./src/drivers/VGA/system_commands.c -o ./build/drivers/VGA/system_commands.o
 
+#PMM 
+./build/memory/paging/PMM/pmm.o: ./src/memory/paging/PMM/pmm.c
+	i686-elf-gcc $(INCLUDES) -I./src/memory/paging/PMM/ $(FLAGS) -std=gnu99 -c ./src/memory/paging/PMM/pmm.c -o ./build/memory/paging/PMM/pmm.o
+
+#e820_mmap
+./build/e820_mmap/e820_mmap.o: ./src/e820_mmap/e820_mmap.c
+	i686-elf-gcc $(INCLUDES) -I./src/e820_mmap/ $(FLAGS) -std=gnu99 -c ./src/e820_mmap/e820_mmap.c -o ./build/e820_mmap/e820_mmap.o
 clean:
 	rm -rf ./bin/boot.bin
 	rm -rf ./bin/kernel.bin

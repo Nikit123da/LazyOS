@@ -24,7 +24,7 @@ _start:
 
     ;remap the PIC
     cli 
-    ;call remap_pic
+    call remap_pic
     ;NOTE: made anothere remap in the pic.c file, calling it before anything in main.
     call kernel_main
     

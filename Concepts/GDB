@@ -2,5 +2,5 @@ Comnnads
 
 add-symbol-file <file> 0x100000 - the address we wanna start
 target remote | qtarget remote | qemu-system-x86_64 -hda ./os.bin -gdb stdio -S
-qemu-system-x86_64 -hda ./os.bin -gdb stdio -S
+qemu-system-i386 -hda ./os.bin -gdb stdio -S
 break *<address> / <file.c>:<line>
