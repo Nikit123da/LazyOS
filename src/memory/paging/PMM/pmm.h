@@ -10,5 +10,6 @@
 void init_bitmap_PMM();
 void fill_from_to(uint32_t base, uint32_t len);
 int find_free_pmm_space(uint32_t bytes);
+int get_free_physical_address();
 
 #endif

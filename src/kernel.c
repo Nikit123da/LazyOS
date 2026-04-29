@@ -10,10 +10,10 @@
 #include "idt/PIC/pic.h"
 #include "idt/idt.h"
 #include "memory/paging/PMM/pmm.h"
+#include <stdint.h>
 
 // NOTE: For now keep the Devision by zero error as a halting thing.
-// TODO: Maybe add rings to the program
-// TODO: Add a PMM
+// TODO:
 
 // FILE SYSTEM -> PROCESSES -> PAGING WITH THE PROCESSES
 extern void problem();
@@ -42,11 +42,11 @@ void kernel_main() {
 
   paging_switch(PD_ptr->directory_pointer);
 
-  // char *ptr = kzalloc(4096);
+  int ptr = get_free_physical_address();
 
-  // paging_set(PD_ptr->directory_pointer, (void *)0x1000,
-  //            (uint32_t)ptr | PAGING_IS_WRITABLE | PAGING_IS_PRESENT |
-  //                PAGING_ACCESS_FOROM_ALL);
+  paging_set(PD_ptr->directory_pointer, (void *)0x1000,
+             ptr | PAGING_IS_WRITABLE | PAGING_IS_PRESENT |
+                 PAGING_ACCESS_FOROM_ALL);
 
   enable_paging();
 

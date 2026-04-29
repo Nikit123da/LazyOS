@@ -11,6 +11,7 @@
 // info RAM;
 
 uint8_t *bitmap;
+uint8_t *curr_free_space;
 
 int calc_frames(uint64_t size) {
   if (size >= 0x100000000 - 1)
@@ -23,24 +24,24 @@ void devide_blocks_entries(uint32_t frames, uint32_t *full, uint8_t *not_full) {
   *not_full = frames % 8;
 }
 
-uint8_t checker_size(uint32_t frames) {
-  uint8_t checker;
-  for (int i = 0; i < frames; i++) {
-    checker = checker << 1 | 0b00000001;
-  }
-  return checker;
-}
+// uint8_t checker_size(uint32_t frames) {
+//   uint8_t checker;
+//   for (int i = 0; i < frames; i++) {
+//     checker = checker << 1 | 0b00000001;
+//   }
+//   return checker;
+// }
 
-void marked_as_taken(uint32_t full_entry, uint32_t not_full_entry,
-                     uint32_t start) {
-  int i = 0;
-  for (i = 0x100000; i < full_entry; i++) {
-    bitmap[i] = WHOLE_ENTRY_TAKN;
-  }
-
-  uint8_t checker = checker_size(not_full_entry);
-  bitmap[i] = bitmap[i] | checker;
-}
+// void marked_as_taken(uint32_t full_entry, uint32_t not_full_entry,
+//                      uint32_t start) {
+//   int i = 0;
+//   for (i = 0x100000; i < full_entry; i++) {
+//     bitmap[i] = WHOLE_ENTRY_TAKN;
+//   }
+//
+//   uint8_t checker = checker_size(not_full_entry);
+//   bitmap[i] = bitmap[i] | checker;
+// }
 
 void fill_from_to(uint32_t base, uint32_t len) {
   /*tail*/
@@ -123,43 +124,27 @@ void init_bitmap_PMM() {
   }
 
   manual_prefill();
+  curr_free_space = bitmap;
 }
 
-//
-// uint8_t check_entry_for_free_space(uint8_t entry, uint8_t *offset, int bytes)
-// {
-//   uint8_t checker = 0b00000001;
-//
-//   int i = 0;
-//   uint32_t frames = calc_frames(bytes);
-//
-//   for (i = 0; i < 8; i++) {
-//     if (!(checker & entry)) {
-//       *offset = i;
-//       break;
-//     }
-//     checker = checker << 1;
-//   }
-//   return checker;
-// }
-//
-// int find_free_pmm_space(uint32_t bytes) {
-//   uint32_t res = 0;
-//   uint8_t checker;
-//   uint32_t addr = 0;
-//   uint8_t offset = 0;
-//
-//   for (int i = 0; i < PMM_ENTRIES; i++) {
-//     checker = check_entry_for_free_space(bitmap[i], &offset, bytes);
-//     if (checker) {
-//       bitmap[i] = bitmap[i] | checker;
-//       addr = i * PAGE_SIZE * 8 + PAGE_SIZE * offset;
-//       res = addr;
-//       break;
-//     }
-//   }
-//   if (!res) {
-//     res = -NO_MEMORY;
-//   }
-//   return res;
-// }
+int get_free_physical_address() {
+  uint8_t i = 0;
+  while (curr_free_space[i] == 255) {
+    i++;
+  } // Now at a block that can give a frame
+
+  curr_free_space += i;
+
+  // find what bit is responsible for the empty frame. looking for a 0
+  uint8_t marker = 0b00000001;
+  int j;
+  for (j = 0; j < 8; j++) {
+    if (!(curr_free_space[i] ^ marker)) { // if 0
+      break;
+    }
+    marker = (marker << 1) | 0b00000001;
+  }
+
+  int byte_offset = curr_free_space - bitmap;
+  return (byte_offset * 8 + j) * 4096;
+}

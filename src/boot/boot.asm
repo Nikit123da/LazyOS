@@ -3,7 +3,7 @@ BITS 16 ; type of architecture that the the bootoader uses, 16 bits in our case
 
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
-
+mmap_ent equ 0x600
 
 _start:
   jmp short start 
@@ -45,7 +45,10 @@ step2:
     mov ss, ax
     mov sp, 0x7c00
     sti
+    mov word [0x7000], 0x1111
     call do_e820
+    mov word [0x7000], 0x2222   ; marker: "do_e820 returned"
+    mov word [0x7002], bp 
 
   .load_protected:
       cli ;clear interrupts
@@ -62,70 +65,51 @@ step2:
 [BITS 16]
 ;-----------------E820-----------------
 do_e820:
-    mov ax, 0x1234
-    mov [0x8000], ax     ; Write a magic number to the count loc
-    mov eax, 0xDEADBEEF
-    mov [0x8010], eax    ; Write a magic number to the entry loc
-    ret
-  ;   mov edi, 0x7F010; location that memory map will be stored to
-  ;   xor ebx, ebx; ebx must be 0 to start
-  ;   xor bp, bp; keep an entry count in bp
-  ;   mov edx, 0x0534D4150; Place "SMAP" into edx
-  ;   mov eax, 0xe820
-  ;
-  ;   mov dword [es:di + 20], 1; force a valid ACPI 3.X entry
-  ;   mov ecx, 24; ask for 24 bytes
-  ;   int 0x15
-  ;
-  ;   jc nomemmap; carry set on first call means "unsupported function"
-  ;   mov edx, 0x0534D4150; Some BIOSes apparently trash this register?
-  ;   cmp eax, edx; on success, eax must have been reset to "SMAP"
-  ;   jne nomemmap
-  ;
-  ;   test ebx, ebx; ebx = 0 implies list is only 1 entry long (worthless)
-  ;   je nomemmap
-  ;
-  ;   jmp jmpin
-  ;
-  ; e820lp:
-  ;   mov eax, 0xe820; eax, ecx get trashed on every int 0x15 call
-  ;   mov dword [es:di + 20], 1; force a valid ACPI 3.X entry
-  ;   mov ecx, 24; ask for 24 bytes again
-  ;   int 0x15
-  ;   jc memmapend; carry set means "end of list already reached"
-  ;   mov edx, 0x0534D4150; repair potentially trashed register
-  ; jmpin:
-  ;
-  ;   jcxz skipent; skip any 0 length entries
-  ;   cmp cl, 20; got a 24 byte ACPI 3.X response?
-  ;   jbe notext
-  ;
-  ;   test byte [es:di + 20], 1; if so: is the "ignore this data" bit clear?
-  ;   je skipent
-  ; notext:
-  ;
-  ;   mov ecx, [es:di + 8]; get lower dword of memory region length
-  ;   test ecx, ecx; is the qword == 0?
-  ;   jne goodent
-  ;   mov ecx, [es:di + 12]; get upper dword of memory region length
-  ;   jecxz skipent; if length qword is 0, skip entry
-  ; goodent:
-  ;
-  ;   inc bp; got a good entry: ++count, move to next storage spot
-  ;   add di, 32; Pad to 32 bytes for each record
-  ; skipent:
-  ;
-  ;   test ebx, ebx; if ebx resets to 0, list is complete
-  ;   jne e820lp
-  ; nomemmap:
-  ;
-  ; memmapend:
-  ;   mov [0x7F000], bp
-  ;   xor eax, eax; Create a blank record for termination (32 bytes)
-  ;   mov ecx, 8
-  ;   rep stosd
-  ;   ret
-;----------------------------------------------------
+mov di, 0x604         ; Set di to 0x8004. Otherwise this code will get stuck in `int 0x15` after some entries are fetched 
+	xor ebx, ebx		; ebx must be 0 to start
+	xor bp, bp		; keep an entry count in bp
+	mov edx, 0x0534D4150	; Place "SMAP" into edx
+	mov eax, 0xe820
+	mov [es:di + 20], dword 1	; force a valid ACPI 3.X entry
+	mov ecx, 24		; ask for 24 bytes
+	int 0x15
+	jc short .failed	; carry set on first call means "unsupported function"
+	mov edx, 0x0534D4150	; Some BIOSes apparently trash this register?
+	cmp eax, edx		; on success, eax must have been reset to "SMAP"
+	jne short .failed
+	test ebx, ebx		; ebx = 0 implies list is only 1 entry long (worthless)
+	je short .failed
+	jmp short .jmpin
+.e820lp:
+	mov eax, 0xe820		; eax, ecx get trashed on every int 0x15 call
+	mov [es:di + 20], dword 1	; force a valid ACPI 3.X entry
+	mov ecx, 24		; ask for 24 bytes again
+	int 0x15
+	jc short .e820f		; carry set means "end of list already reached"
+	mov edx, 0x0534D4150	; repair potentially trashed register
+.jmpin:
+	jcxz .skipent		; skip any 0 length entries
+	cmp cl, 20		; got a 24 byte ACPI 3.X response?
+	jbe short .notext
+	test byte [es:di + 20], 1	; if so: is the "ignore this data" bit clear?
+	je short .skipent
+.notext:
+	mov ecx, [es:di + 8]	; get lower uint32_t of memory region length
+	or ecx, [es:di + 12]	; "or" it with upper uint32_t to test for zero
+	jz .skipent		; if length uint64_t is 0, skip entry
+	inc bp			; got a good entry: ++count, move to next storage spot
+	add di, 24
+.skipent:
+	test ebx, ebx		; if ebx resets to 0, list is complete
+	jne short .e820lp
+.e820f:
+	mov [es:mmap_ent], bp	; store the entry count
+	clc			; there is "jc" on end of list to this point, so the carry must be cleared
+	ret
+.failed:
+	stc			; "function unsupported" error exit
+	ret
+ ;----------------------------------------------------
 
 ; GDT
 gdt_start:
@@ -164,7 +148,7 @@ gdt_descriptor:
 [BITS 32]
 load32:
     mov eax, 1 ;sector we want to load from, second sector 
-    mov ecx, 100 ;how many sectors to load
+    mov ecx, 200 ;how many sectors to load
     mov edi, 0x0100000 ;1MB - address we want to load them into
     call ata_lba_read
     jmp CODE_SEG:0X0100000 ;start execuing code from here. BEGINING OF THE KERNEL

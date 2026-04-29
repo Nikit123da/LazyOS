@@ -8,7 +8,6 @@ typedef struct {
   uint64_t length;
   uint32_t type;
   uint32_t extended;
-  uint32_t padding[2]; // This accounts for the 'add di, 32
 } __attribute__((packed)) E820Entry;
 void get_e820_mmap();
 
