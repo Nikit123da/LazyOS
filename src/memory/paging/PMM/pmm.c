@@ -24,25 +24,6 @@ void devide_blocks_entries(uint32_t frames, uint32_t *full, uint8_t *not_full) {
   *not_full = frames % 8;
 }
 
-// uint8_t checker_size(uint32_t frames) {
-//   uint8_t checker;
-//   for (int i = 0; i < frames; i++) {
-//     checker = checker << 1 | 0b00000001;
-//   }
-//   return checker;
-// }
-
-// void marked_as_taken(uint32_t full_entry, uint32_t not_full_entry,
-//                      uint32_t start) {
-//   int i = 0;
-//   for (i = 0x100000; i < full_entry; i++) {
-//     bitmap[i] = WHOLE_ENTRY_TAKN;
-//   }
-//
-//   uint8_t checker = checker_size(not_full_entry);
-//   bitmap[i] = bitmap[i] | checker;
-// }
-
 void fill_from_to(uint32_t base, uint32_t len) {
   /*tail*/
   if (len <= 0) {
@@ -111,8 +92,8 @@ void fill_from_to(uint32_t base, uint32_t len) {
 void manual_prefill() {
   uint64_t heap_start = HEAP_START_ADDRESS;
   uint64_t heap_end = HEAP_START_ADDRESS + LAZYOS_HEAP_SIZE_BYTES;
-
-  fill_from_to(0x100000, 0x1FA000);
+  fill_from_to(0x0000, 0x000FFFFF);
+  fill_from_to(0x100000, 0x200000);
   fill_from_to(heap_start, heap_end);
 }
 
@@ -136,13 +117,20 @@ int get_free_physical_address() {
   curr_free_space += i;
 
   // find what bit is responsible for the empty frame. looking for a 0
-  uint8_t marker = 0b00000001;
+  uint8_t marker = 0b00000000;
   int j;
   for (j = 0; j < 8; j++) {
     if (!(curr_free_space[i] ^ marker)) { // if 0
       break;
     }
-    marker = (marker << 1) | 0b00000001;
+
+    else if (!marker) {
+      marker = 0b00000001;
+    }
+
+    else {
+      marker = (marker << 1) | 0b00000001;
+    }
   }
 
   int byte_offset = curr_free_space - bitmap;

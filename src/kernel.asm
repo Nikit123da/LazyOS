@@ -15,8 +15,9 @@ _start:
     mov fs, ax
     mov es, ax
     mov gs, ax
-    mov ebp, 0x00200000 ;RAM runtime data, functions, variables etc
+    mov ebp, 0x00200000 ;The stack
     mov esp,ebp
+
     ;Enable A20 line
     in al, 0x92 ;read from the 92 port
     or al, 2

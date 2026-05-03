@@ -9,7 +9,6 @@ void *memset(void *ptr, int c, size_t size) {
 }
 
 int memcmp(void *ptr1, void *ptr2, size_t num) {
-
   char *c1 = ptr1;
   char *c2 = ptr2;
   while (num-- > 0) {

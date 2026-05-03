@@ -45,10 +45,7 @@ step2:
     mov ss, ax
     mov sp, 0x7c00
     sti
-    mov word [0x7000], 0x1111
     call do_e820
-    mov word [0x7000], 0x2222   ; marker: "do_e820 returned"
-    mov word [0x7002], bp 
 
   .load_protected:
       cli ;clear interrupts
@@ -120,12 +117,12 @@ gdt_start:
   ; offset 0x8
 
   gdt_code:
-      dw 0xffff ; segment limit first 0-15 bits
-      dw 0      ; base first 0 -15 bits
+      dw 0xffff ; segment limit first 0-15 bits LIMIT
+      dw 0      ; base first 0 -15 bits BASE 
       db 0      ; Base 16 -23 bits
       db 0x9a   ;Acess byte
       db 11001111b ;High 4 bit flags and the low 4 bit flags
-      db 0        ; Base 24-31 bits
+      db 0        ; Base 24-31 bits BASE 
 
   ; offset 0x10 
 
@@ -141,8 +138,8 @@ gdt_end:
 
 
 gdt_descriptor:
-    dw gdt_end-gdt_start-1
-    dd gdt_start
+    dw gdt_end-gdt_start-1 ;Size of the gdt
+    dd gdt_start ;Base address of the gdt
 
 
 [BITS 32]
