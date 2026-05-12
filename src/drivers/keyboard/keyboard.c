@@ -88,9 +88,7 @@ char return_letter(uint8_t scan_code) {
     return ']';
     break;
 
-  // Row: ASDF
-  case 0x3A:
-    // return"CAPS LOCK"; FIX:
+    // Row: ASDF
     break;
   case 0x1E:
     return 'a';
@@ -158,10 +156,6 @@ char return_letter(uint8_t scan_code) {
   case 0x35:
     return '/';
     break;
-  case 0x36:
-    // return"R-SHIFT"; // FIX:
-    break;
-
   case 0x39:
     return ' ';
     break; // Space
@@ -178,16 +172,14 @@ void keyboard_callback() {
   uint8_t scan_code = insb(0x60);
   // checking for the key release event
   if (scan_code & 0x80) {
-    outb(0x20, 0x20);
     return;
   }
 
   char ch = return_letter(scan_code);
   char str[2] = {ch, '\0'};
-
   print(str);
 
-  if (scan_code == 0x0E) {
+  if (scan_code == 0x0E) { // Backspace
     remove_one_from_buffer();
   } else if (ch == '\n') {
     print("inside buffer:");
@@ -199,8 +191,5 @@ void keyboard_callback() {
     inputIntoBuffer(ch);
   }
 
-  // print("\n");
-  // print("inside buffer: ");
-  // print(buff);
   outb(0x20, 0x20);
 }

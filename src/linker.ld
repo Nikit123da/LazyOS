@@ -30,6 +30,5 @@ SECTIONS
 		*(.asm)
 	}
 
-   /* _kernel_end = .; /*if i'll ever need  */ 
 }
 

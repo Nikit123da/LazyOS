@@ -2,7 +2,6 @@
 #include "../../IO/io.h"
 #include "../../drivers/VGA/VGA.h"
 void PIC_remap(int offset1) {
-
   print("Remaping PIC...\n");
   outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
   outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);

@@ -108,6 +108,7 @@ void init_bitmap_PMM() {
   curr_free_space = bitmap;
 }
 
+// being marked in the bitmap
 int get_free_physical_address() {
   uint8_t i = 0;
   while (curr_free_space[i] == 255) {
@@ -117,22 +118,16 @@ int get_free_physical_address() {
   curr_free_space += i;
 
   // find what bit is responsible for the empty frame. looking for a 0
-  uint8_t marker = 0b00000000;
+  uint8_t inverted = ~curr_free_space[i];
   int j;
   for (j = 0; j < 8; j++) {
-    if (!(curr_free_space[i] ^ marker)) { // if 0
+    if ((inverted >> j) & 1) {
       break;
-    }
-
-    else if (!marker) {
-      marker = 0b00000001;
-    }
-
-    else {
-      marker = (marker << 1) | 0b00000001;
     }
   }
 
+  curr_free_space[i] |= 0b00000000 << j;
+
   int byte_offset = curr_free_space - bitmap;
-  return (byte_offset * 8 + j) * 4096;
+  return (byte_offset * 8) + j * 4096;
 }

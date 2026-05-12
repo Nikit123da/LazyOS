@@ -25,6 +25,7 @@ typedef enum {
   White
 } color;
 void print(char *msg);
+void print_digit(int num);
 void terminal_initialize();
 uint16_t terminal_make_char(char c, color fg, color bg);
 size_t strlen(const char *str);

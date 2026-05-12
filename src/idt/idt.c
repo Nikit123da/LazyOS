@@ -10,12 +10,10 @@
 // NOTE: masked = disabled
 // NOTE: extern keyword - bring a routine from assembly to C
 
-struct idt_desc
-    idt_descriptors[LAZYOS_TOTAL_INTERRUPTS]; // 512 descriptor entries
+struct idt_desc idt_descriptors[LAZYOS_TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
 
-extern void
-idt_load(struct idtr_desc *ptr); // helps debugging to put the struct
+extern void idt_load(struct idtr_desc *ptr);
 
 extern void enable_interrupts();
 
@@ -23,9 +21,12 @@ extern void enable_interrupts();
 
 void timer_interrupt() {
   init_pit(100);
-  // timer_handler();
+  timer_handler();
 }
-void keyboard_interrupt() { keyboard_callback(); }
+void keyboard_interrupt() {
+  outb(0x20, 0x20);
+  keyboard_callback();
+}
 void no_interrupt_handler() { outb(0x20, 0x20); } // val 00100000
 
 /*WRAPPERS*/
@@ -88,8 +89,8 @@ void idt_init() {
   idt_set(0x1E, isr30);
   idt_set(0x1F, isr31);
 
-  idt_set(0x20, irq0);
-  idt_set(0x21, irq1);
+  idt_set(0x20, irq0); // PIT
+  idt_set(0x21, irq1); // keyboard
 
   // load the idt_desc
   idt_load(&idtr_descriptor);

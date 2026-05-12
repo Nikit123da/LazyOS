@@ -1,4 +1,4 @@
-FILES = ./build/kernel.asm.o ./build/kernel.o ./build/idt/idt.asm.o ./build/idt/idt.o ./build/memory/memory.o ./build/IO/io.asm.o ./build/PIT/pit.o ./build/drivers/VGA/VGA.o ./build/drivers/keyboard/keyboard.o ./build/idt/ISR/isr.o ./build/idt/ISR/isr.asm.o ./build/idt/PIC/pic.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/disk/disk.o ./build/disk/streamer.o ./build/drivers/VGA/vga_buffer.o ./build/str/str.o ./build/fs/pparser.o ./build/clock/clock.o ./build/drivers/VGA/system_commands.o ./build/memory/paging/PMM/pmm.o ./build/e820_mmap/e820_mmap.o
+FILES = ./build/kernel.asm.o ./build/kernel.o ./build/idt/idt.asm.o ./build/idt/idt.o ./build/memory/memory.o ./build/IO/io.asm.o ./build/PIT/pit.o ./build/drivers/VGA/VGA.o ./build/drivers/keyboard/keyboard.o ./build/idt/ISR/isr.o ./build/idt/ISR/isr.asm.o ./build/idt/PIC/pic.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/disk/disk.o ./build/disk/streamer.o ./build/drivers/VGA/vga_buffer.o ./build/str/str.o ./build/fs/pparser.o ./build/clock/clock.o ./build/drivers/VGA/system_commands.o ./build/memory/paging/PMM/pmm.o ./build/e820_mmap/e820_mmap.o ./build/process/process.o ./build/process/process.asm.o ./build/queue/queue.o
 
 
 INCLUDES = -I./src 
@@ -121,9 +121,20 @@ all: ./bin/boot.bin ./bin/kernel.bin
 #e820_mmap
 ./build/e820_mmap/e820_mmap.o: ./src/e820_mmap/e820_mmap.c
 	i686-elf-gcc $(INCLUDES) -I./src/e820_mmap/ $(FLAGS) -std=gnu99 -c ./src/e820_mmap/e820_mmap.c -o ./build/e820_mmap/e820_mmap.o
+
+#process
+./build/process/process.o: ./src/process/process.c
+	i686-elf-gcc $(INCLUDES) -I./src/process/ $(FLAGS) -std=gnu99 -c ./src/process/process.c -o ./build/process/process.o
+
+./build/process/process.asm.o: ./src/process/process.asm
+	nasm -f elf -g ./src/process/process.asm -o ./build/process/process.asm.o
+
+./build/queue/queue.o: ./src/queue/queue.h
+	i686-elf-gcc $(INCLUDES) -I./src/queue/ $(FLAGS) -std=gnu99 -c ./src/queue/queue.c -o ./build/queue/queue.o
+
 clean:
 	rm -rf ./bin/boot.bin
 	rm -rf ./bin/kernel.bin
 	rm -rf ./bin/os.bin
 	rm -rf ${FILES}
-	rm -rf ./build/kernelfull.o
+	rm -rf ./build/kernelfull.elf

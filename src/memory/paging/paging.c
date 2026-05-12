@@ -82,6 +82,7 @@ int paging_set(uint32_t *directory, void *virtual_addr,
 
   uint32_t directory_index = 0;
   uint32_t table_index = 0;
+  // WARNING: maybe add an offset when processes get more progressive.
 
   int res = paging_get_indexes(virtual_addr, &directory_index, &table_index);
   if (res < 0) {

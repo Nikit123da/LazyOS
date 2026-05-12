@@ -10,7 +10,7 @@ uint8_t rtc_read(uint8_t type) {
 
 uint8_t convert_to_num(uint8_t bcd) { return ((bcd >> 4) * 10) + (bcd & 0x0F); }
 
-void rtc_updated() {
+void rtc_updated() { // waits for the upproveal when the RTC updates fully
   while (rtc_read(0x0A) & 0x80) {
   }
 }
@@ -53,7 +53,7 @@ void itoa(uint8_t num, char *buf) {
 }
 
 void print_time(rtc_time *t) {
-  char buf[4]; // buffer to hold the string
+  char buf[4]; // buffer for the time in string format
   itoa(t->hours, buf);
   print(buf);
   print(":");

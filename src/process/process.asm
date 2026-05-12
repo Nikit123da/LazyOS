@@ -1,40 +1,68 @@
-switch_to_task:
+global context_switch
 
-    ;Save previous task's state
+SP_OFFSET       equ 0
+VIRT_OFFSET     equ 4
+STATE_OFFSET    equ 8
+PROCESS_RUNNING equ 3
 
-    ;Notes:
-    ;  For cdecl; EAX, ECX, and EDX are already saved by the caller and don't need to be saved again
-    ;  EIP is already saved on the stack by the caller's "CALL" instruction
-    ;  The task isn't able to change CR3 so it doesn't need to be saved
-    ;  Segment registers are constants (while running kernel code) so they don't need to be saved
+context_switch:
+    mov eax, [esp + 4];curr
+    mov edx, [esp + 8];next
 
-    push ebx
-    push esi
-    push edi
-    push ebp
+    ; --- save current process ---
+    test eax, eax            ;if first process 
+    jz .load
 
-    mov edi,[current_task_TCB]    ;edi = address of the previous task's "thread control block"
-    mov [edi+TCB.ESP],esp         ;Save ESP for previous task's kernel stack in the thread's TCB
+    pusha                    ; save all registers
+    mov [eax + SP_OFFSET], esp   ; save esp into curr->sp
+                                 ; (after pusha so restore works correctly)
 
-    ;Load next task's state
+.load:
+    ; --- update next state ---
+    mov dword [edx + STATE_OFFSET], PROCESS_RUNNING
 
-    mov esi,[esp+(4+1)*4]         ;esi = address of the next task's "proceess control block" (parameter passed on stack)
-    mov [current_task_TCB],esi    ;Current task's TCB is the next task TCB
+    ; --- switch page directory if needed ---
+    mov ebx, [edx + VIRT_OFFSET]
+    test ebx, ebx            ; if virt_addr is NULL skip cr3 switch
+    jz .skip_cr3
+    mov ecx, cr3
+    cmp ebx, ecx
+    je .skip_cr3
+    mov cr3, ebx
 
-    mov esp,[esi+TCB.ESP]         ;Load ESP for next task's kernel stack from the thread's TCB
-    mov eax,[esi+TCB.CR3]         ;eax = address of page directory for next task
-    mov ebx,[esi+TCB.ESP0]        ;ebx = address for the top of the next task's kernel stack
-    mov [TSS.ESP0],ebx            ;Adjust the ESP0 field in the TSS (used by CPU for for CPL=3 -> CPL=0 privilege level changes)
-    mov ecx,cr3                   ;ecx = previous task's virtual address space
+.skip_cr3:
+    ; --- restore next process ---
+    mov esp, [edx + SP_OFFSET]   ; load next->sp into esp
+    popa                          ; restore all registers
+    ret                           ; jump to saved eip
 
-    cmp eax,ecx                   ;Does the virtual address space need to being changed?
-    je .doneVAS                   ; no, virtual address space is the same, so don't reload it and cause TLB flushes
-    mov cr3,eax                   ; yes, load the next task's virtual address space
-.doneVAS:
-
-    pop ebp
-    pop edi
-    pop esi
-    pop ebx
-
-    ret                           ;Load next task's EIP from its kernel stack
+; global context_switch
+;
+; SP_OFFSET       equ 0
+; VIRT_OFFSET     equ 4
+; STATE_OFFSET    equ 8
+; PROCESS_RUNNING equ 3
+;
+; context_switch:
+;     mov eax, [esp + 4]   ; curr
+;     mov edx, [esp + 8]   ; next
+;     test eax, eax
+;     jz .load
+;     pushf                        ; ← save EFLAGS
+;     pusha
+;     mov [eax + SP_OFFSET], esp
+; .load:
+;     mov dword [edx + STATE_OFFSET], PROCESS_RUNNING
+;     mov ebx, [edx + VIRT_OFFSET]
+;     test ebx, ebx
+;     jz .skip_cr3
+;     mov ecx, cr3
+;     cmp ebx, ecx
+;     je .skip_cr3
+;     mov cr3, ebx
+; .skip_cr3:
+;     mov esp, [edx + SP_OFFSET]
+;     popa
+;     popf                         ; ← restore EFLAGS (re-enables interrupts)
+;     ret
+;
