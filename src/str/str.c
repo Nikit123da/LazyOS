@@ -13,7 +13,7 @@ size_t strlen(const char *str) {
 int strnlen(const char *ch, int max) {
   int i = 0;
   for (; i < max; i++) {
-    if (ch[i] == 0) {
+    if (ch[i] == '\0') {
       break;
     }
   }

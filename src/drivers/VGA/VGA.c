@@ -12,12 +12,6 @@ void print(char *msg) {
   }
 }
 
-// void print_num(int num){
-//   while(num != 0){
-//     int
-//   }
-// }
-
 void print_digit(int num) { terminal_write_char(num + '0', White, Black); }
 
 uint16_t terminal_make_char(char c, color fg, color bg) {

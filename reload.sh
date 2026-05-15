@@ -4,4 +4,4 @@ cd ~/LazyOS/
 make clean
 ./build.sh
 cd ~/LazyOS/bin/
-qemu-system-x86_64 -hda ./os.bin
+qemu-system-i386 -hda ./os.bin

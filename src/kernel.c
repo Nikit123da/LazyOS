@@ -2,13 +2,16 @@
 #include "./PIT/pit.h"
 #include "./disk/disk.h"
 #include "./e820_mmap/e820_mmap.h"
+#include "./fs/fat/fat12.h"
 #include "./memory/heap/kheap.h"
 #include "./memory/paging/paging.h"
 #include "./process/process.h"
+#include "disk/streamer.h"
 #include "drivers/VGA/VGA.h"
 #include "idt/PIC/pic.h"
 #include "idt/idt.h"
 #include "memory/paging/PMM/pmm.h"
+#include "str/str.h"
 #include <stdint.h>
 
 // FILE SYSTEM -> PROCESSES -> PAGING WITH THE PROCESSES
@@ -56,19 +59,33 @@ void kernel_main() {
              ptr | PAGING_IS_WRITABLE | PAGING_IS_PRESENT |
                  PAGING_ACCESS_FOROM_ALL);
   enable_paging();
+
+  FAT12_table_init();
+
   enable_interrupts();
-  // disk_stream *stream = disk_streamer_new(0);
-  // disk_streamer_seek(stream, 0x201);
-  // unsigned char *ch = 0;
-  // disk_streamer_read(stream, ch, 1, 0);
-  // while (1) {
-  // }
   terminal_clear();
 
-  //------------------processes---------------------
+  // char buff[] =
+  //     "This is a new message super long message "
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+  //
+  // create_file("hello", "txt", buff, sizeof(buff), 0x20);
 
-  initQueue();
-  proc_a = create_process(proc_a_entry);
-  proc_b = create_process(proc_b_entry);
-  context_switch(NULL, proc_a);
+  read_file("hello   ");
+
+  //------------------processes---------------------
+  // initQueue();
+  // proc_a = create_process(proc_a_entry);
+  // proc_b = create_process(proc_b_entry);
+  // context_switch(NULL, proc_a);
 }

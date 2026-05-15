@@ -1,6 +1,7 @@
 #ifndef VGA_H
 #define VGA_H
 
+#include "../../str/str.h"
 #include <stddef.h>
 #include <stdint.h>
 #define VGA_WIDTH 80
@@ -25,11 +26,8 @@ typedef enum {
   White
 } color;
 void print(char *msg);
-void print_digit(int num);
 void terminal_initialize();
 uint16_t terminal_make_char(char c, color fg, color bg);
-size_t strlen(const char *str);
-void print(char *str);
 void terminal_put_char(uint16_t x, uint16_t y, color fg, color bg, char ch);
 void terminal_write_char(char c, color fg, color bg);
 void terminal_clear();

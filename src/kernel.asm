@@ -23,12 +23,8 @@ _start:
     or al, 2
     out 0x92, al ;write to the port 92
 
-    ;remap the PIC
     cli 
-    call remap_pic
-    ;NOTE: made anothere remap in the pic.c file, calling it before anything in main.
     call kernel_main
-    
     jmp $ ;jmp forever
 
 times 512-($ - $$) db 0 

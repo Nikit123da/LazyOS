@@ -3,11 +3,11 @@
 #include "../config.h"
 #include "../memory/memory.h"
 #include "../status.h"
-// NOTE: maybe add an inode.
 
 disk dsk;
 
 int disk_read_secotr(int lba, int total, void *buff) {
+  while (insb(0x1f7) & 0x80) {} // wait for BSY to clear
   outb(0x1f6, (lba >> 24) | 0xE0); // asks for the primary disk with 0xE0
   outb(0x1f2, total);              // how many sectors to read
   outb(0x1f3, (unsigned char)(lba & 0xff));
@@ -23,12 +23,34 @@ int disk_read_secotr(int lba, int total, void *buff) {
     } // check for the flags that tell if the disk is ready
 
     // copy from hard disk to memory
-    for (i = 0; i < 256; i++) {
+    for (int j = 0; j < 256; j++) {
       // reading fro, the primary hard disk
       *ptr = insw(0x1f0); // read to buffer
       ptr++;
     }
   }
+  return 0;
+}
+
+int disk_write_sector(int lba, int total, void *buff) {
+  while (insb(0x1f7) & 0x80) {} // wait for BSY to clear
+  outb(0x1f6, (lba >> 24) | 0xE0); // asks for the primary disk with 0xE0
+  outb(0x1f2, total);              // how many sectors to write
+  outb(0x1f3, (unsigned char)(lba & 0xff));
+  outb(0x1f4, (unsigned char)(lba >> 8));
+  outb(0x1f5, (unsigned char)(lba >> 16));
+  outb(0x1f7, 0x30);
+
+  unsigned short *ptr = (unsigned short *)buff;
+  for (int i = 0; i < total; i++) {
+    while (!(insb(0x1f7) & 0x08)) {
+    }
+
+    for (int j = 0; j < 256; j++) {
+      outw(0x1f0, ptr[j]);
+    }
+  }
+
   return 0;
 }
 
@@ -52,4 +74,13 @@ int disk_read_block(disk *idisk, unsigned int lba, int total, void *buff) {
   }
 
   return disk_read_secotr(lba, total, buff);
+}
+
+int disk_write_block(disk *idisk, unsigned int lba, int size_of_buff,
+                     void *buff) {
+  if (idisk != &dsk) {
+    return -EIO;
+  }
+
+  return disk_write_sector(lba, size_of_buff, buff);
 }

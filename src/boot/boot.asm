@@ -5,33 +5,35 @@ CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 mmap_ent equ 0x600
 
-_start:
-  jmp short start 
-  nop ; no operation
+jmp short start 
+nop ; no operation
 
 ;FAT12 header
 ;The first 3 bytes of the header
-
-OEMIdentifier     db 'LAZYOS  '
-BytesPerSector    dw 512 ;512 bytes
-SectorsPerCluster db 1
-ReservedSectors   dw 150 ;For the kernel
-FATCopies         db 2
-RoodDirEntries    dw 160
-NumSectors        dw 2880
-MediaType         db 0xF0
-SectorsPerFat     dw 10
-SectorsPerTrack   dw 18
-NumOfHeads        dw 2
-HiddenSectors     dd 0
+;FF - EOF
+;each entry is 2 bytes long
+; FAT12 BPB - layout: sector 0=boot, 1-200=kernel, 201-2880=FAT data, total=2881
+OEMIdentifier           db 'LAZYOS  '
+BytesPerSector          dw 512
+SectorsPerCluster       db 1
+ReservedSectors         dw 201       ; 1 boot + 200 kernel sectors
+FATCopies               db 2
+RootDirEntries          dw 224
+NumSectors              dw 2881      ; total sectors on disk
+MediaType               db 0xF8      ; fixed disk
+SectorsPerFat           dw 9
+SectorsPerTrack         dw 18
+NumberOfHeads           dw 2
+HiddenSectors           dd 0
+SectorsBig              dd 0
 
 ;Extended BPB
-DriveNumber db 0x80
-WinNTBit    db 0x00
-Signature   db 0x29
-VolumeID    dd 0x00
-VolumeIDString db 'LAZYOS BOOT'
-SystemIDString db 'FAT12   '
+DriveNumber             db 0x80
+WinNTBit                db 0x00
+Signature               db 0x29
+VolumeID                dd 0xD105
+VolumeIDString          db 'LAZYOS BOOT' ;11 bytes
+SystemIDString          db 'FAT12   '
 
 
 start:

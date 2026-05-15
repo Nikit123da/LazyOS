@@ -1,7 +1,6 @@
 #include "e820_mmap.h"
 #include "../memory/paging/PMM/pmm.h"
 #include <stdalign.h>
-#include <stddef.h>
 #include <stdint.h>
 
 void get_e820_mmap() {
