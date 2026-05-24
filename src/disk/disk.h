@@ -1,8 +1,6 @@
 #ifndef DISK_H
 #define DISK_H
 
-#include "../fs/file.h"
-
 typedef unsigned int LAZYOS_DISK_TYPE;
 
 // real physical hard disk
@@ -11,8 +9,6 @@ typedef unsigned int LAZYOS_DISK_TYPE;
 typedef struct disk {
   LAZYOS_DISK_TYPE type;
   int sector_size;
-
-  // filesystem *filesystem;
 } disk;
 
 void disk_search_and_init();

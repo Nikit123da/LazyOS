@@ -7,6 +7,7 @@
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 20
 #define KEYBOARD_BUFFER_SIZE 256
+typedef enum { TERMINAL, EDITOR } mode;
 typedef enum {
   Black,
   Blue,
@@ -25,6 +26,9 @@ typedef enum {
   Yellow,
   White
 } color;
+
+extern mode mode_t;
+
 void print(char *msg);
 void terminal_initialize();
 uint16_t terminal_make_char(char c, color fg, color bg);
@@ -32,6 +36,7 @@ void terminal_put_char(uint16_t x, uint16_t y, color fg, color bg, char ch);
 void terminal_write_char(char c, color fg, color bg);
 void terminal_clear();
 void Backspace();
+void print_digit(int num);
 
 void init_keyboard_buffer();
 void clearBuffer();
@@ -39,4 +44,15 @@ void inputIntoBuffer(char ch);
 void bufferTestCommand();
 void print_buff();
 void remove_one_from_buffer();
+void save_window_content();
+void enter_editor_mode(char *filename);
+void retrive_saved_window();
+void print_color(char *msg, color fg, color bg);
+
+/*----------------EDITOR BUFF------------------*/
+void inputIntoEditorBuffer(char ch);
+void clearEditorBuffer();
+void remove_one_from_editor_buffer();
+void c_file();
+
 #endif // !VGA_H

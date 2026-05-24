@@ -8,7 +8,7 @@
 #define FILE 0x20
 #define DIRECTORY 0X10
 #define STARTING_DATA_SECTOR 233
-#define FAT1_SECTOR 201
+#define FAT1_SECTOR 202
 #define START_ROOT_DIR 219
 #define SECTOR_SIZE 512
 
@@ -24,9 +24,9 @@ typedef struct {
 } file_dir; // 15 bytes
 
 void FAT12_table_init();
-int fat12_allocate(uint32_t size);
-void free_file(uint32_t file_sector);
 file_dir *create_file(const char *name_t, const char *ext_t, void *data,
                       uint32_t size, uint8_t attribute_t);
 void read_file(char *name);
+void delete_file(char *name);
+void list_files();
 #endif // !FAT12_H

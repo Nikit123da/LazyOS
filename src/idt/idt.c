@@ -19,10 +19,7 @@ extern void enable_interrupts();
 
 /*HANDLER FUNCTIONS*/
 
-void timer_interrupt() {
-  init_pit(100);
-  timer_handler();
-}
+void timer_interrupt() { timer_handler(); }
 void keyboard_interrupt() {
   outb(0x20, 0x20);
   keyboard_callback();

@@ -10,12 +10,11 @@ context_switch:
     mov edx, [esp + 8];next
 
     ; --- save current process ---
-    test eax, eax            ;if first process 
+    test eax, eax
     jz .load
 
-    pusha                    ; save all registers
-    mov [eax + SP_OFFSET], esp   ; save esp into curr->sp
-                                 ; (after pusha so restore works correctly)
+    pusha
+    mov [eax + SP_OFFSET], esp
 
 .load:
     ; --- update next state ---
@@ -34,35 +33,6 @@ context_switch:
     ; --- restore next process ---
     mov esp, [edx + SP_OFFSET]   ; load next->sp into esp
     popa                          ; restore all registers
+    sti
     ret                           ; jump to saved eip
 
-; global context_switch
-;
-; SP_OFFSET       equ 0
-; VIRT_OFFSET     equ 4
-; STATE_OFFSET    equ 8
-; PROCESS_RUNNING equ 3
-;
-; context_switch:
-;     mov eax, [esp + 4]   ; curr
-;     mov edx, [esp + 8]   ; next
-;     test eax, eax
-;     jz .load
-;     pushf                        ; ← save EFLAGS
-;     pusha
-;     mov [eax + SP_OFFSET], esp
-; .load:
-;     mov dword [edx + STATE_OFFSET], PROCESS_RUNNING
-;     mov ebx, [edx + VIRT_OFFSET]
-;     test ebx, ebx
-;     jz .skip_cr3
-;     mov ecx, cr3
-;     cmp ebx, ecx
-;     je .skip_cr3
-;     mov cr3, ebx
-; .skip_cr3:
-;     mov esp, [edx + SP_OFFSET]
-;     popa
-;     popf                         ; ← restore EFLAGS (re-enables interrupts)
-;     ret
-;

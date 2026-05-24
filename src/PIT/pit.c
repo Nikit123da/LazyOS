@@ -6,9 +6,8 @@
 uint32_t time_slice;
 
 void timer_handler() {
-  // scheduler(time_slice);
-  // print("timer ");
-  // scheduler(time_slice);
+  outb(0x20, 0x20);
+  scheduler(time_slice);
 }
 
 void init_pit(uint32_t freq) {

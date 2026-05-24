@@ -4,6 +4,7 @@
 #include "../../disk/streamer.h"
 #include "../../drivers/VGA/VGA.h"
 #include "../../memory/heap/kheap.h"
+#include "../../memory/memory.h"
 #include "../../status.h"
 #include "../../str/str.h"
 #include <stdint.h>
@@ -62,12 +63,32 @@ void free_file(uint32_t file_sector) { // file_sector = begining of a file
   fat12_table[file_sector] = FREE_ENTRY;
 }
 
+void write_data_into_memory(file_dir *f, void *data) {
+  disk_stream *stream_out = disk_streamer_new(0);
+  int data_size = f->size;
+  uint16_t next = f->first_cluster - STARTING_DATA_SECTOR;
+  int to_write = data_size > SECTOR_SIZE ? SECTOR_SIZE : data_size;
+
+  while (fat12_table[next] != END_OF_FILE) {
+    to_write = data_size > SECTOR_SIZE ? SECTOR_SIZE : data_size;
+    disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * 512);
+    disk_streamer_write(stream_out, data, to_write);
+    data_size -= to_write;
+    data += to_write;
+    next = fat12_table[next];
+  }
+
+  disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * 512);
+  disk_streamer_write(stream_out, data, to_write);
+
+  disk_streamer_close(stream_out);
+}
+
 void write_into_memory(file_dir *file, void *data) {
   disk_stream *stream_out = disk_streamer_new(0);
 
   // FILE DATA
-  disk_streamer_seek(stream_out, file->first_cluster * 512); // works
-  disk_streamer_write(stream_out, data, file->size);
+  write_data_into_memory(file, data);
 
   // FAT12 TABLE ITSELF
   disk_streamer_seek(stream_out,
@@ -119,6 +140,7 @@ int comp_file_name(char *ptr1, char *ptr2) {
   }
   return 1;
 }
+
 void read_file(char *name) {
   uint8_t file_found = 0;
   uint32_t data_size;
@@ -166,5 +188,71 @@ void read_file(char *name) {
     // ERROR NO FILE FOUND
     disk_streamer_close(stream_out);
     print("NO FILE FOUND\n");
+  }
+}
+
+void delete_file(char *name) {
+  uint8_t found = 0;
+  uint8_t pos;
+  for (int i = 0; i < 224; i++) {
+    if (comp_file_name(root_dir[i].name, name)) {
+      found = 1;
+      pos = i;
+      break;
+    }
+  }
+
+  if (found) {
+    // 1. clean the file content
+    int first_clust = root_dir[pos].first_cluster;
+    int next = first_clust - STARTING_DATA_SECTOR;
+    int prev;
+    disk_stream *stream_out = disk_streamer_new(0);
+    while (fat12_table[next] != END_OF_FILE) {
+      disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * 512);
+      disk_streamer_write(stream_out, delete_buff, 512);
+      prev = next;
+      next = fat12_table[next];
+      fat12_table[prev] = FREE_ENTRY;
+    }
+
+    disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * 512);
+    disk_streamer_write(stream_out, delete_buff, 512);
+    fat12_table[next] = FREE_ENTRY;
+
+    // 2. clean the metadata from the root_dirr array
+    memset(&root_dir[pos], 0x00, sizeof(file_dir));
+
+    disk_streamer_seek(stream_out, START_ROOT_DIR * 512);
+    disk_streamer_write(stream_out, root_dir, sizeof(file_dir) * 224);
+
+    // 3. clean the file in the fat12 table
+    disk_streamer_seek(stream_out, FAT1_SECTOR * 512);
+    disk_streamer_write(stream_out, fat12_table,
+                        sizeof(uint16_t) * TOTAL_FAT12_ENTREIS);
+
+    disk_streamer_close(stream_out);
+  }
+
+  else {
+    print("NO FILE FOUND");
+  }
+}
+
+void list_files() {
+  for (int i = 0; i < 224; i++) {
+    if (root_dir[i].name[0] == 0) // empty slot → skip
+      continue;
+
+    // name/ext are fixed-width and space-padded, so write a bounded count
+    for (int j = 0; j < 8; j++)
+      terminal_write_char(root_dir[i].name[j], White, Black);
+    terminal_write_char('.', White, Black);
+    for (int j = 0; j < 3; j++)
+      terminal_write_char(root_dir[i].ext[j], White, Black);
+
+    print("   ");
+    print_time(&root_dir[i].time_stamp);
+    print("\n");
   }
 }

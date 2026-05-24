@@ -1,4 +1,5 @@
 #include "../../IO/io.h"
+#include "../../fs/fat/fat12.h"
 #include "../VGA/VGA.h"
 #include <stdint.h>
 
@@ -9,6 +10,9 @@ char return_letter(uint8_t scan_code) {
   // Row: Number row
   case 0x29:
     return '`';
+    break;
+  case 0x01:
+    return 'E';
     break;
   case 0x02:
     return '1';
@@ -175,20 +179,49 @@ void keyboard_callback() {
     return;
   }
 
+  if (mode_t == EDITOR && scan_code == 0x01) { // ESC
+    c_file();
+    clearEditorBuffer();
+    mode_t = TERMINAL;
+    retrive_saved_window();
+    outb(0x20, 0x20);
+    return;
+  }
+
   char ch = return_letter(scan_code);
   char str[2] = {ch, '\0'};
   print(str);
 
   if (scan_code == 0x0E) { // Backspace
-    remove_one_from_buffer();
-  } else if (ch == '\n') {
-    print("inside buffer:");
-    print_buff();
+    if (mode_t == TERMINAL) {
+      remove_one_from_buffer();
+    }
+
+    else {
+      remove_one_from_editor_buffer();
+    }
+  }
+
+  if (ch == '\n') {
     print("\n");
-    bufferTestCommand();
-    clearBuffer();
-  } else if (ch != '\0') {
-    inputIntoBuffer(ch);
+    if (mode_t == TERMINAL) {
+      bufferTestCommand();
+      clearBuffer();
+    }
+
+    else {
+      inputIntoEditorBuffer(ch); // input enter
+    }
+  }
+
+  else if (ch != '\0') {
+    if (mode_t == TERMINAL) {
+      inputIntoBuffer(ch);
+    }
+
+    else { // MODE = EDITOR
+      inputIntoEditorBuffer(ch);
+    }
   }
 
   outb(0x20, 0x20);

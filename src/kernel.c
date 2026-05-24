@@ -14,37 +14,51 @@
 #include "str/str.h"
 #include <stdint.h>
 
-// FILE SYSTEM -> PROCESSES -> PAGING WITH THE PROCESSES
 extern void problem();
+int shared_variable = 0;
+uint32_t shared_lock = 0;
 
-process *proc_a;
-process *proc_b;
 void proc_a_entry(void) {
-  print("starting process A\n");
-  for (int i = 0; i < 10; i++) {
-    context_switch(proc_a, proc_b);
+  print("\nstarting process A\n");
+  setLock(&shared_lock); // lock the lock
+
+  for (int i = 0; i < 50; i++) {
     print("A");
-    sleep(4000);
-    // scheduler(10);
+    shared_variable++; // modify the data
+    print_digit(shared_variable);
+    sleep(4000); // outside the lock — good
   }
+  releaseLock(&shared_lock); // unlock the lock
 }
 
 void proc_b_entry(void) {
-  print("starting process B\n");
-  for (int i = 0; i < 10; i++) {
-    context_switch(proc_b, proc_a);
+  print("\nstarting process B\n");
+  // setLock(&shared_lock); // lock the lock
+
+  for (int i = 0; i < 50; i++) {
     print("B");
+    // shared_variable--; // modify the data
+    // print_digit(shared_variable);
     sleep(4000);
-    // scheduler(10);
+  }
+  // releaseLock(&shared_lock); // unlock the lock
+}
+
+void proc_c_entry(void) {
+  print("\nstarting process C\n");
+  for (int i = 0; i < 100; i++) {
+    print("C");
+    int something = 5 / 0;
+    if (something)
+      sleep(4000);
   }
 }
 
-static pointer_to_page_directory *PD_ptr = 0;
+pointer_to_page_directory *PD_ptr = 0;
 void kernel_main() {
   terminal_initialize();
   PIC_remap(PIC_OFFSET);
   kheap_init();
-  // search and init the disk
   disk_search_and_init();
   init_keyboard_buffer();
   idt_init(); // Initialize IDT
@@ -52,40 +66,20 @@ void kernel_main() {
   get_e820_mmap();
   PD_ptr = paging_new_4gb(PAGING_IS_WRITABLE | PAGING_IS_PRESENT |
                           PAGING_ACCESS_FOROM_ALL);
-  // swtich to kernel paging chunk
   paging_switch(PD_ptr->directory_pointer);
-  int ptr = get_free_physical_address();
-  paging_set(PD_ptr->directory_pointer, (void *)0x1000,
-             ptr | PAGING_IS_WRITABLE | PAGING_IS_PRESENT |
-                 PAGING_ACCESS_FOROM_ALL);
   enable_paging();
 
   FAT12_table_init();
 
+  init_pit(100);
   enable_interrupts();
   terminal_clear();
 
-  // char buff[] =
-  //     "This is a new message super long message "
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  //     "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
-  //
-  // create_file("hello", "txt", buff, sizeof(buff), 0x20);
-
-  read_file("hello   ");
-
-  //------------------processes---------------------
-  // initQueue();
-  // proc_a = create_process(proc_a_entry);
-  // proc_b = create_process(proc_b_entry);
-  // context_switch(NULL, proc_a);
+  initQueue();
+  create_process(proc_a_entry);
+  create_process(proc_b_entry);
+  create_process(proc_c_entry);
+  start_processes();
+  print("\nall processes done, back in kernel_main\n");
+  // problem();
 }

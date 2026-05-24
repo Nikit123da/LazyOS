@@ -1,6 +1,7 @@
 #include "isr.h"
 #include "../../IO/io.h"
 #include "../../drivers/VGA/VGA.h"
+#include "../../process/process.h"
 /*Intel 32 255 interrupts:
  * https://www.intel.com/content/dam/support/us/en/documents/processors/pentium4/sb/25366821.pdf*/
 
@@ -72,8 +73,15 @@ extern void isr31();
 
 void softwear_interrupt_handler(registers_t *reg) {
   if (reg->int_no < 32) {
-    print(exception_messages[reg->int_no]);
     print("\n");
+    print_color(exception_messages[reg->int_no], Red, Black);
+    print("\n");
+    if (reg->int_no == 0) {
+      print_color("Exception has been handled", Green, Black);
+
+      kill_proc();
+      return;
+    }
   }
   __asm__ __volatile__("cli;hlt");
 }

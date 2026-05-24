@@ -1,49 +1,64 @@
 #include "queue.h"
 #include "../memory/heap/kheap.h"
 
-void queue_init(process_queue *q) {
-  q->head = NULL;
-  q->tail = NULL;
-  q->size = 0;
+static void swap(priority_queue *q, int a, int b) {
+  process *tmp = q->data[a];
+  q->data[a] = q->data[b];
+  q->data[b] = tmp;
 }
 
-void queue_push(process_queue *q, process *proc) {
-  queue_node *node = (queue_node *)kzalloc(sizeof(queue_node));
-  node->proc = proc;
-  node->next = NULL;
-
-  if (q->tail) {
-    q->tail->next = node; // link to end
-  } else {
-    q->head = node; // first node, also the head
+static void bubble_up(priority_queue *q, int i) {
+  while (i > 0) {
+    int parent = (i - 1) / 2;
+    if (q->data[i]->priority > q->data[parent]->priority) {
+      swap(q, i, parent);
+      i = parent;
+    } else {
+      break;
+    }
   }
+}
 
-  q->tail = node;
+static void bubble_down(priority_queue *q, int i) {
+  while (1) {
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
+    int largest = i;
+
+    if (left < q->size && q->data[left]->priority > q->data[largest]->priority)
+      largest = left;
+    if (right < q->size &&
+        q->data[right]->priority > q->data[largest]->priority)
+      largest = right;
+
+    if (largest == i)
+      break;
+
+    swap(q, i, largest);
+    i = largest;
+  }
+}
+
+void pq_init(priority_queue *q) { q->size = 0; }
+
+void pq_push(priority_queue *q, process *proc) {
+  if (q->size >= MAX_PROCESSES)
+    return;
+  q->data[q->size] = proc;
+  bubble_up(q, q->size);
   q->size++;
 }
 
-process *queue_pop(process_queue *q) {
-  if (!q->head)
-    return NULL;
-
-  queue_node *node = q->head;
-  process *proc = node->proc;
-
-  q->head = node->next;
-
-  if (!q->head) {
-    q->tail = NULL; // queue is now empty
-  }
-
-  kfree(node);
+process *pq_pop(priority_queue *q) {
+  if (q->size == 0)
+    return 0;
+  process *top = q->data[0];
   q->size--;
-  return proc;
+  q->data[0] = q->data[q->size];
+  bubble_down(q, 0);
+  return top;
 }
 
-process *queue_peek(process_queue *q) {
-  if (!q->head)
-    return NULL;
-  return q->head->proc;
-}
+process *pq_peek(priority_queue *q) { return q->size ? q->data[0] : 0; }
 
-uint8_t queue_is_empty(process_queue *q) { return q->size == 0; }
+int pq_is_empty(priority_queue *q) { return q->size == 0; }

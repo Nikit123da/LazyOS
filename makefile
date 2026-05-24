@@ -1,21 +1,21 @@
-FILES = ./build/kernel.asm.o ./build/kernel.o ./build/idt/idt.asm.o ./build/idt/idt.o ./build/memory/memory.o ./build/IO/io.asm.o ./build/PIT/pit.o ./build/drivers/VGA/VGA.o ./build/drivers/keyboard/keyboard.o ./build/idt/ISR/isr.o ./build/idt/ISR/isr.asm.o ./build/idt/PIC/pic.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/disk/disk.o ./build/disk/streamer.o ./build/drivers/VGA/vga_buffer.o ./build/str/str.o ./build/fs/pparser.o ./build/clock/clock.o ./build/drivers/VGA/system_commands.o ./build/memory/paging/PMM/pmm.o ./build/e820_mmap/e820_mmap.o ./build/process/process.o ./build/process/process.asm.o ./build/queue/queue.o ./build/fs/fat12/fat12.o
+FILES = ./build/kernel.asm.o ./build/kernel.o ./build/idt/idt.asm.o ./build/idt/idt.o ./build/memory/memory.o ./build/IO/io.asm.o ./build/PIT/pit.o ./build/drivers/VGA/VGA.o ./build/drivers/keyboard/keyboard.o ./build/idt/ISR/isr.o ./build/idt/ISR/isr.asm.o ./build/idt/PIC/pic.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/disk/disk.o ./build/disk/streamer.o ./build/drivers/VGA/vga_buffer.o ./build/str/str.o  ./build/clock/clock.o ./build/drivers/VGA/system_commands.o ./build/memory/paging/PMM/pmm.o ./build/e820_mmap/e820_mmap.o ./build/process/process.o ./build/process/process.asm.o ./build/queue/queue.o ./build/fs/fat12/fat12.o ./build/process/spinlock.asm.o
 
 
 INCLUDES = -I./src 
-FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-functions -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc 
+FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-functions -fno-builtin -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc 
 
 
 
 all: ./bin/boot.bin ./bin/kernel.bin
-	# rm -rf ./bin/os.bin
-	# dd if=./bin/boot.bin >> ./bin/os.bin
-	# dd if=./bin/kernel.bin >> ./bin/os.bin
-	# dd if=/dev/zero bs=512 count=2880 >> ./bin/os.bin
-	@if [ ! -f ./bin/os.bin ]; then \
-					dd if=/dev/zero bs=512 count=2881 of=./bin/os.bin; \
-	fi
-	dd if=./bin/boot.bin of=./bin/os.bin bs=512 count=1 conv=notrunc
-	dd if=./bin/kernel.bin of=./bin/os.bin bs=512 seek=1 conv=notrunc
+	rm -rf ./bin/os.bin
+	dd if=./bin/boot.bin >> ./bin/os.bin
+	dd if=./bin/kernel.bin >> ./bin/os.bin
+	dd if=/dev/zero bs=512 count=2880 >> ./bin/os.bin
+	# @if [ ! -f ./bin/os.bin ]; then \
+	# 				dd if=/dev/zero bs=512 count=2881 of=./bin/os.bin; \
+	# fi
+	# dd if=./bin/boot.bin of=./bin/os.bin bs=512 count=1 conv=notrunc
+	# dd if=./bin/kernel.bin of=./bin/os.bin bs=512 seek=1 conv=notrunc
 
 	# sudo mount -t vfat ./bin/os.bin /mnt/d
 	# Copy a file over
@@ -113,10 +113,6 @@ all: ./bin/boot.bin ./bin/kernel.bin
 ./build/str/str.o: ./src/str/str.c
 	i686-elf-gcc $(INCLUDES) -I./src/ $(FLAGS) -std=gnu99 -c ./src/str/str.c -o ./build/str/str.o
 
-#pparser
-./build/fs/pparser.o: ./src/fs/pparser.c
-	i686-elf-gcc $(INCLUDES) -I./src/fs/ $(FLAGS) -std=gnu99 -c ./src/fs/pparser.c -o ./build/fs/pparser.o
-
 #clock
 ./build/clock/clock.o: ./src/clock/clock.c
 	i686-elf-gcc $(INCLUDES) -I./src/clock/ $(FLAGS) -std=gnu99 -c ./src/clock/clock.c -o ./build/clock/clock.o
@@ -146,6 +142,8 @@ all: ./bin/boot.bin ./bin/kernel.bin
 ./build/fs/fat12/fat12.o: ./src/fs/fat/fat12.c
 	i686-elf-gcc $(INCLUDES) -I./src/fs/fat/ $(FLAGS) -std=gnu99 -c ./src/fs/fat/fat12.c -o ./build/fs/fat12/fat12.o
 
+./build/process/spinlock.asm.o: ./src/process/spinlock.asm
+	nasm -f elf -g ./src/process/spinlock.asm -o ./build/process/spinlock.asm.o
 clean:
 	rm -rf ./bin/boot.bin
 	rm -rf ./bin/kernel.bin

@@ -113,29 +113,30 @@ mov di, 0x604         ; Set di to 0x8004. Otherwise this code will get stuck in 
 ; GDT
 gdt_start:
   ;a must in the GDT struct https://wiki.osdev.org/GDT_Tutorial
-  gdt_null:
+  gdt_null: ;NULL descriptor
       dq 0x0
 
   ; offset 0x8
 
-  gdt_code:
+  gdt_code: ; code descriptor
       dw 0xffff ; segment limit first 0-15 bits LIMIT
       dw 0      ; base first 0 -15 bits BASE 
       db 0      ; Base 16 -23 bits
-      db 0x9a   ;Acess byte
+      db 0x9a   ;Acess byte (10011010) 
       db 11001111b ;High 4 bit flags and the low 4 bit flags
       db 0        ; Base 24-31 bits BASE 
 
   ; offset 0x10 
 
-  gdt_data:       ; DS, SS, ES , FS , GS
+  gdt_data:       ; DS, SS, ES , FS , GS. data descriptor
       dw 0xffff ; segment limit first 0-15 bits
       dw 0      ; base first 0 -15 bits
       db 0      ; Base 16 -23 bits
-      db 0x92   ;Acess byte
+      db 0x92   ;Acess byte (10010010)
       db 11001111b ;High 4 bit flags and the low 4 bit flags
       db 0        ; Base 24-31 bits
 
+  ;Can have TSS (task state segment descriptor) totaly optional
 gdt_end:
 
 
