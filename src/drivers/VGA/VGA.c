@@ -114,7 +114,7 @@ void Backspace() {
 
   back_one();
   while (!(terminal_col == 0 && terminal_row == 0) &&
-         cell_attr(terminal_col, terminal_row) == 0) {
+         cell_attr(terminal_col, terminal_row) == 0) { // if black
     back_one();
   }
 

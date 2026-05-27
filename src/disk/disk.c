@@ -7,13 +7,16 @@
 disk dsk;
 
 int disk_read_secotr(int lba, int total, void *buff) {
-  while (insb(0x1f7) & 0x80) {} // wait for BSY to clear
+  while (insb(0x1f7) & 0x80) {
+  } // wait for BSY to clear
   outb(0x1f6, (lba >> 24) | 0xE0); // asks for the primary disk with 0xE0
   outb(0x1f2, total);              // how many sectors to read
+  //--------------LBA----------------///
   outb(0x1f3, (unsigned char)(lba & 0xff));
   outb(0x1f4, (unsigned char)(lba >> 8));
   outb(0x1f5, (unsigned char)(lba >> 16));
-  outb(0x1f7, 0x20);
+  /*------------------------------------*/
+  outb(0x1f7, 0x20); // read from file
 
   unsigned short *ptr = (unsigned short *)buff;
 
@@ -33,13 +36,14 @@ int disk_read_secotr(int lba, int total, void *buff) {
 }
 
 int disk_write_sector(int lba, int total, void *buff) {
-  while (insb(0x1f7) & 0x80) {} // wait for BSY to clear
+  while (insb(0x1f7) & 0x80) {
+  } // wait for BSY to clear
   outb(0x1f6, (lba >> 24) | 0xE0); // asks for the primary disk with 0xE0
   outb(0x1f2, total);              // how many sectors to write
   outb(0x1f3, (unsigned char)(lba & 0xff));
   outb(0x1f4, (unsigned char)(lba >> 8));
   outb(0x1f5, (unsigned char)(lba >> 16));
-  outb(0x1f7, 0x30);
+  outb(0x1f7, 0x30); // write to disk
 
   unsigned short *ptr = (unsigned short *)buff;
   for (int i = 0; i < total; i++) {

@@ -12,8 +12,10 @@ void timer_handler() {
 
 void init_pit(uint32_t freq) {
   time_slice = 1000 / freq;
-  int32_t divisor = PIT_FREQ / freq;
-  uint8_t mode = 0x36; // 00110110
+  int32_t divisor = PIT_FREQ / freq; // = 0x2E9B
+  uint8_t mode = 0x36; // 00110110 (00) channel 0 (11) acess mode (011) square
+                       // wave generator (0) 16 bit binary
+                       // Expect two writes into port 0x40 that takes only 8
   outb(MODE_COMMAND_REGISTER, mode);
   outb(PIT_IO_PORT, (uint8_t)(divisor & 0xFF));
   outb(PIT_IO_PORT, (uint8_t)((divisor >> 8) & 0xFF));

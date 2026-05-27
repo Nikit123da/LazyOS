@@ -33,15 +33,3 @@ problem:
   mov ax, 0 
   div ax
 
-
-remap_pic:
-    mov al, 00010001b
-    out 0x20, al ; Tell master PIC
-
-    mov al, 0x20 ; Interrupt 0x20 is where master ISR should start
-    out 0x21, al
-
-    mov al, 00000001b
-    out 0x21, al
-    ret
-

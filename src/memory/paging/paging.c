@@ -71,11 +71,9 @@ int paging_get_indexes(void *virtual_address, uint32_t *directory_index_out,
   return res;
 }
 
-/*
-  sets the page table entry to the value which is the addres i guess
-*/
 int paging_set(uint32_t *directory, void *virtual_addr,
-               uint32_t physical_addr) {
+               uint32_t physical_addr) { // cretes a PT for a PD and writes the
+                                         // physical addr into it.
   if (!paging_is_aligned(virtual_addr)) {
     return -EINVARG;
   }
@@ -103,30 +101,26 @@ int paging_set(uint32_t *directory, void *virtual_addr,
     entry = directory[directory_index];
   }
 
-  uint32_t *table = (uint32_t *)(entry & 0xfffff000);
+  uint32_t *table =
+      (uint32_t *)(entry & 0xfffff000); // Exctracts the physical addr of the
+                                        // table in memory, from the 12 bit
+                                        // flags in the memory of the page table
   table[table_index] = physical_addr;
-
   return 0;
 }
 
-/*
- * Build a fresh page directory for a new process.
- *
- * Shares the first KERNEL_SHARED_PD_ENTRIES entries with the kernel directory
- * (so kernel code, heap, BIOS area, etc. stay reachable after CR3 switches).
- * The remaining entries are zero, leaving the rest of the 4 GB free for the
- * process to map its own pages into. Page tables for those regions are
- * allocated on demand by paging_set.
- */
-pointer_to_page_directory *
-paging_new_process_directory(uint32_t *kernel_directory) {
+pointer_to_page_directory *paging_new_process_directory(
+    uint32_t *kernel_directory) { // creates a PD for the proc and maps the
+                                  // kernel space into it's lower levels,
+                                  // returns that PD for the proc
   uint32_t *directory =
       kzalloc(sizeof(uint32_t) * PAGING_TOTAL_ENTRIES_PER_TABLE);
   if (!directory) {
     return 0;
   }
 
-  for (int i = 0; i < KERNEL_SHARED_PD_ENTRIES; i++) { // NOTE: WHY 32 SHARED?
+  for (int i = 0; i < KERNEL_SHARED_PD_ENTRIES;
+       i++) { // Using kernel and heap and stuff
     directory[i] = kernel_directory[i];
   }
 
@@ -138,25 +132,27 @@ paging_new_process_directory(uint32_t *kernel_directory) {
   return ptr;
 }
 
-int vmm_alloc(uint32_t *directory, uint32_t virt_start, uint32_t size,
-              uint32_t flags) {
+int vmm_alloc(
+    uint32_t *directory, uint32_t virt_start, uint32_t size,
+    uint32_t flags) { // allocates a number of frames with the page set
   if (!paging_is_aligned(((void *)virt_start))) {
     return -EINVARG;
   }
 
-  uint32_t pages = (size + PAGING_PAGE_SIZE - 1) / PAGING_PAGE_SIZE;
+  uint32_t pages =
+      (size + PAGING_PAGE_SIZE - 1) / PAGING_PAGE_SIZE; // pages to give away
 
   for (uint32_t i = 0; i < pages; i++) {
     uint32_t virt = virt_start + i * PAGING_PAGE_SIZE;
-    int phys = get_free_physical_address();
+    int phys = get_free_physical_address(); // allocs physical ones
     if (phys == -NO_MEMORY)
       return 0; // out of memory
 
-    paging_set(directory, (void *)virt,
-               phys | flags | PAGING_IS_PRESENT | PAGING_IS_WRITABLE);
+    paging_set(directory, (void *)virt, phys | flags);
   }
 
-  return virt_start;
+  return virt_start + pages * PAGING_PAGE_SIZE; // returns the top of the last
+                                                // frame in the physical
 }
 
 int free_vmm(uint32_t *directory, void *virt_start, uint32_t size) {
@@ -190,4 +186,22 @@ int free_vmm(uint32_t *directory, void *virt_start, uint32_t size) {
   }
 
   return 0;
+}
+
+uint32_t paging_get_physical(uint32_t *directory, void *virt) {
+  uint32_t dir_idx = 0, tbl_idx = 0;
+  if (paging_get_indexes(virt, &dir_idx, &tbl_idx) < 0)
+    return 0;
+
+  uint32_t pd_entry = directory[dir_idx];
+  if (!(pd_entry & PAGING_IS_PRESENT))
+    return 0;
+
+  uint32_t *table = (uint32_t *)(pd_entry & 0xFFFFF000);
+  uint32_t pt_entry = table[tbl_idx];
+  if (!(pt_entry & PAGING_IS_PRESENT))
+    return 0;
+
+  return (pt_entry & 0xFFFFF000) |
+         ((uint32_t)virt & 0xFFF); // find the physical addr of a virutl one
 }

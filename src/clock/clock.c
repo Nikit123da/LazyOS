@@ -11,7 +11,8 @@ uint8_t rtc_read(uint8_t type) {
 uint8_t convert_to_num(uint8_t bcd) { return ((bcd >> 4) * 10) + (bcd & 0x0F); }
 
 void rtc_updated() { // waits for the upproveal when the RTC updates fully
-  while (rtc_read(0x0A) & 0x80) {
+  while (rtc_read(0x0A) &
+         0x80) { // MSB = UIP (update in progress) if 1 not read, if 0 ready
   }
 }
 

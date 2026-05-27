@@ -92,9 +92,9 @@ void fill_from_to(uint32_t base, uint32_t len) {
 void manual_prefill() {
   uint64_t heap_start = HEAP_START_ADDRESS;
   uint64_t heap_end = HEAP_START_ADDRESS + LAZYOS_HEAP_SIZE_BYTES;
-  fill_from_to(0x0000, 0x000FFFFF);
-  fill_from_to(0x100000, 0x200000);
-  fill_from_to(heap_start, heap_end);
+  fill_from_to(0x0000, 0x100000);     // lower addresses
+  fill_from_to(0x100000, 0x100000);   // kernel + stack
+  fill_from_to(heap_start, heap_end); // heap
 }
 
 void init_bitmap_PMM() {
@@ -127,7 +127,6 @@ int get_free_physical_address() {
     }
   }
 
-  // curr_free_space[i] |= 0b00000000 << j;
   bitmap[i] |= (1 << j);
 
   int byte_offset = i;

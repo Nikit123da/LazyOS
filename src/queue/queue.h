@@ -6,7 +6,6 @@
 typedef enum {
   PROCESS_UNUSED,
   PROCESS_READY,
-  PROCESS_WAITING,
   PROCESS_RUNNING,
   PROCESS_TERMINATED
 } process_state;
@@ -14,12 +13,13 @@ typedef enum {
 // Keep sp/virt_addr/state at offsets 0/4/8 — context_switch.asm relies on
 // these offsets.
 typedef struct __attribute__((packed)) {
-  uint32_t sp;     // current esp (top of saved context)
-  void *virt_addr; // page directory physical addr / cr3
+  uint32_t sp; // current esp (top of saved context)
+  void *cr3;   // page directory physical addr / cr3
   process_state state;
   uint8_t priority;
   uint8_t PID;
   float burst_time;
+  uint8_t spinning; // 1 while busy-waiting on a lock; scheduler skips burst
 } process;
 
 typedef struct {

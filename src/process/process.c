@@ -8,10 +8,10 @@
 
 extern pointer_to_page_directory *PD_ptr;
 
-process procs[MAX_PROCS];
+process procs[MAX_PROCS] = {0};
 process kernel_proc = {0};
 process *zombie = NULL;
-int indx = 0;
+int indx = 1;
 
 priority_queue ready_queue;
 priority_queue waiting_queue;
@@ -26,7 +26,7 @@ void free_proc(process *proc);
 void initQueue() {
   pq_init(&ready_queue);
   pq_init(&waiting_queue);
-  kernel_proc.virt_addr = (void *)PD_ptr->directory_pointer;
+  kernel_proc.cr3 = (void *)PD_ptr->directory_pointer;
   kernel_proc.state = PROCESS_READY;
 }
 
@@ -48,7 +48,7 @@ static void process_exit(void) {
   process *next = pq_pop(&ready_queue);
   next->state = PROCESS_RUNNING;
   executing_process = next;
-  context_switch(NULL, next);
+  context_switch(dying, next);
 }
 
 void kill_proc() { process_exit(); }
@@ -66,21 +66,26 @@ process *create_process(void (*entry)()) {
 
   pointer_to_page_directory *pd =
       paging_new_process_directory(PD_ptr->directory_pointer);
+
   if (!pd)
     return NULL;
 
-  int stack_phys = get_free_physical_address();
-  if (stack_phys < 0)
+  uint8_t flags = PAGING_IS_PRESENT | PAGING_IS_WRITABLE;
+
+  uint32_t size = PAGING_PAGE_SIZE * 2;
+  int virt_top = vmm_alloc(pd->directory_pointer, PROC_STACK_VIRT, size,
+                           flags); // top of the last frame in the physical
+
+  uint32_t top_page_virt =
+      (uint32_t)virt_top - PAGING_PAGE_SIZE; // base of last page
+  uint32_t phys_base =
+      paging_get_physical(pd->directory_pointer, (void *)top_page_virt);
+
+  if (!phys_base)
     return NULL;
 
-  int res = paging_set(pd->directory_pointer, (void *)PROC_STACK_VIRT,
-                       (uint32_t)stack_phys | PAGING_IS_PRESENT |
-                           PAGING_IS_WRITABLE | PAGING_ACCESS_FOROM_ALL);
-  if (res < 0)
-    return NULL;
-
-  uint32_t stack_top_phys = (uint32_t)stack_phys + PAGING_PAGE_SIZE;
-  uint32_t *sp = (uint32_t *)stack_top_phys;
+  uint32_t phys_top = phys_base + PAGING_PAGE_SIZE;
+  uint32_t *sp = (uint32_t *)phys_top;
   *--sp = (uint32_t)process_exit; // exit trampoline: where entry's ret lands
   *--sp = (uint32_t)entry;
   *--sp = 0; // eax
@@ -92,14 +97,15 @@ process *create_process(void (*entry)()) {
   *--sp = 0; // esi
   *--sp = 0; // edi
 
-  uint32_t used = stack_top_phys - (uint32_t)sp;
-  proc->sp = (PROC_STACK_VIRT + PAGING_PAGE_SIZE) - used;
+  uint32_t used = phys_top - (uint32_t)sp;
+  proc->sp = virt_top - used;
 
-  proc->virt_addr = (void *)pd->directory_pointer;
+  proc->cr3 = (void *)pd->directory_pointer;
   proc->PID = indx++;
   proc->state = PROCESS_READY;
   proc->priority = 1;
   proc->burst_time = 400;
+  proc->spinning = 0;
 
   pq_push(&ready_queue, proc);
 
@@ -116,13 +122,11 @@ void start_processes(void) {
 }
 
 void free_proc(process *proc) {
-  free_vmm((uint32_t *)proc->virt_addr, (void *)PROC_STACK_VIRT,
-           PAGING_PAGE_SIZE);
-  kfree(proc->virt_addr);
+  free_vmm((uint32_t *)proc->cr3, (void *)PROC_STACK_VIRT, PAGING_PAGE_SIZE);
+  kfree(proc->cr3);
 }
 
 void scheduler(float time_slice) {
-
   if (zombie) {
     free_proc(zombie);
     zombie = NULL;
@@ -133,7 +137,8 @@ void scheduler(float time_slice) {
   }
 
   process *prev = executing_process;
-  prev->burst_time -= time_slice;
+  if (!prev->spinning)
+    prev->burst_time -= time_slice;
 
   if (prev->burst_time <= 0) {
     prev->state = PROCESS_TERMINATED;

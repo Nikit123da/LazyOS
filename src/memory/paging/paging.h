@@ -26,7 +26,8 @@ typedef struct {
 void paging_switch(uint32_t *directory);
 
 pointer_to_page_directory *paging_new_4gb(uint32_t flags);
-pointer_to_page_directory *paging_new_process_directory(uint32_t *kernel_directory);
+pointer_to_page_directory *
+paging_new_process_directory(uint32_t *kernel_directory);
 
 void enable_paging();
 
@@ -37,4 +38,5 @@ bool paging_is_aligned(void *addr);
 int vmm_alloc(uint32_t *directory, uint32_t virt_start, uint32_t size,
               uint32_t flags);
 int free_vmm(uint32_t *directory, void *virt_start, uint32_t size);
+uint32_t paging_get_physical(uint32_t *directory, void *virt);
 #endif

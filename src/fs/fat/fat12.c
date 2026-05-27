@@ -10,12 +10,13 @@
 #include <stdint.h>
 file_dir root_dir[224] = {0x00};
 uint16_t *fat12_table;
-int delete_buff[512] = {0x00}; // NOTE: use in free_file to delete the info of
-                               // the file that want to be removed
+int delete_buff[SECTOR_SIZE] = {
+    0x00}; // NOTE: use in free_file to delete the info of
+           // the file that want to be removed
 
 void read_FAT12_table() {
   disk_stream *stream_out = disk_streamer_new(0);
-  disk_streamer_seek(stream_out, FAT1_SECTOR * 512);
+  disk_streamer_seek(stream_out, FAT1_SECTOR * SECTOR_SIZE);
   disk_streamer_read(stream_out, fat12_table, TOTAL_FAT12_ENTREIS);
   disk_streamer_close(stream_out);
 }
@@ -34,7 +35,7 @@ int find_next_free(uint32_t from) {
 }
 
 int fat12_allocate(uint32_t size) {
-  uint32_t sectors_needed = (size + 511) / 512;
+  uint32_t sectors_needed = (size + 511) / SECTOR_SIZE;
 
   uint32_t first = find_next_free(0);
   if (first == -1)
@@ -71,14 +72,14 @@ void write_data_into_memory(file_dir *f, void *data) {
 
   while (fat12_table[next] != END_OF_FILE) {
     to_write = data_size > SECTOR_SIZE ? SECTOR_SIZE : data_size;
-    disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * 512);
+    disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * SECTOR_SIZE);
     disk_streamer_write(stream_out, data, to_write);
     data_size -= to_write;
     data += to_write;
     next = fat12_table[next];
   }
 
-  disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * 512);
+  disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * SECTOR_SIZE);
   disk_streamer_write(stream_out, data, to_write);
 
   disk_streamer_close(stream_out);
@@ -98,7 +99,7 @@ void write_into_memory(file_dir *file, void *data) {
                       sizeof(uint16_t) * TOTAL_FAT12_ENTREIS);
 
   // FILE METADATA / name, time of creation, attribute etc...
-  disk_streamer_seek(stream_out, START_ROOT_DIR * 512); // works
+  disk_streamer_seek(stream_out, START_ROOT_DIR * SECTOR_SIZE); // works
   disk_streamer_write(stream_out, root_dir, sizeof(root_dir));
 
   disk_streamer_close(stream_out);
@@ -149,7 +150,7 @@ void read_file(char *name) {
   char *buff;
   disk_stream *stream_out = disk_streamer_new(0);
 
-  disk_streamer_seek(stream_out, START_ROOT_DIR * 512);
+  disk_streamer_seek(stream_out, START_ROOT_DIR * SECTOR_SIZE);
   disk_streamer_read(stream_out, root_dir, sizeof(root_dir));
 
   for (int i = 0; i < 224; i++) {
@@ -163,11 +164,11 @@ void read_file(char *name) {
 
   if (file_found) {
     read = (data_size > SECTOR_SIZE) ? SECTOR_SIZE : data_size;
-    buff = kzalloc(data_size);
+    buff = kzalloc(data_size + 1);
     char *write_ptr = buff;
     while (fat12_table[next_cluser - STARTING_DATA_SECTOR] != END_OF_FILE) {
       read = (data_size > SECTOR_SIZE) ? SECTOR_SIZE : data_size;
-      disk_streamer_seek(stream_out, next_cluser * 512);
+      disk_streamer_seek(stream_out, next_cluser * SECTOR_SIZE);
       disk_streamer_read(stream_out, write_ptr, read);
       next_cluser = fat12_table[next_cluser - STARTING_DATA_SECTOR] +
                     STARTING_DATA_SECTOR;
@@ -175,10 +176,11 @@ void read_file(char *name) {
       write_ptr += read;
     }
     read = data_size;
-    disk_streamer_seek(stream_out, next_cluser * 512);
+    disk_streamer_seek(stream_out, next_cluser * SECTOR_SIZE);
     disk_streamer_read(stream_out, write_ptr, read);
     disk_streamer_close(stream_out);
 
+    buff[data_size] = '\0';
     print(buff);
     print("\n");
     kfree(buff);
@@ -209,25 +211,26 @@ void delete_file(char *name) {
     int prev;
     disk_stream *stream_out = disk_streamer_new(0);
     while (fat12_table[next] != END_OF_FILE) {
-      disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * 512);
-      disk_streamer_write(stream_out, delete_buff, 512);
+      disk_streamer_seek(stream_out,
+                         (next + STARTING_DATA_SECTOR) * SECTOR_SIZE);
+      disk_streamer_write(stream_out, delete_buff, SECTOR_SIZE);
       prev = next;
       next = fat12_table[next];
       fat12_table[prev] = FREE_ENTRY;
     }
 
-    disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * 512);
-    disk_streamer_write(stream_out, delete_buff, 512);
+    disk_streamer_seek(stream_out, (next + STARTING_DATA_SECTOR) * SECTOR_SIZE);
+    disk_streamer_write(stream_out, delete_buff, SECTOR_SIZE);
     fat12_table[next] = FREE_ENTRY;
 
     // 2. clean the metadata from the root_dirr array
     memset(&root_dir[pos], 0x00, sizeof(file_dir));
 
-    disk_streamer_seek(stream_out, START_ROOT_DIR * 512);
+    disk_streamer_seek(stream_out, START_ROOT_DIR * SECTOR_SIZE);
     disk_streamer_write(stream_out, root_dir, sizeof(file_dir) * 224);
 
     // 3. clean the file in the fat12 table
-    disk_streamer_seek(stream_out, FAT1_SECTOR * 512);
+    disk_streamer_seek(stream_out, FAT1_SECTOR * SECTOR_SIZE);
     disk_streamer_write(stream_out, fat12_table,
                         sizeof(uint16_t) * TOTAL_FAT12_ENTREIS);
 
@@ -251,7 +254,7 @@ void list_files() {
     for (int j = 0; j < 3; j++)
       terminal_write_char(root_dir[i].ext[j], White, Black);
 
-    print("   ");
+    print("  ");
     print_time(&root_dir[i].time_stamp);
     print("\n");
   }

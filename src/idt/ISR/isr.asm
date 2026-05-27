@@ -58,29 +58,13 @@ extern softwear_interrupt_handler
 
 isr_common_stub:
     ; Already pushed: ss, esp, eflags, cs, eip, err_code, int_no
-    
     pusha              ; Push all registers 
-    
-    mov ax, ds
-    push eax           ; Push ds
-    
-    mov ax, 0x10       ; Load kernel data segment descriptor
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    
-    push esp           ; Push pointer to registers_t struct
+
+    push esp           ; Push pointer to registers_t struct (the struct already in the stack, from here can talke fields)
     call softwear_interrupt_handler
-    add esp, 4         ; Clean up pushed ESP
-    
-    pop eax            ; Restore original data segment
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
+    add esp, 4         ; Clean up pushed ESP (moves esp down, meaning the data above is lost)
     
     popa               ; Restore general purpose registers
     add esp, 8         ; Clean up pushed error code and int number
-    sti
+    sti                ; for redability, iret restors the IF in EFLAGS
     iret               ; Return from interrupt

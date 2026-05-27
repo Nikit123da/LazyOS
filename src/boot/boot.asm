@@ -19,8 +19,8 @@ SectorsPerCluster       db 1
 ReservedSectors         dw 201       ; 1 boot + 200 kernel sectors
 FATCopies               db 2
 RootDirEntries          dw 224
-NumSectors              dw 2881      ; total sectors on disk
-MediaType               db 0xF8      ; fixed disk
+NumSectors              dw 2880      ; total sectors on disk
+MediaType               db 0xE8      ; fixed disk
 SectorsPerFat           dw 9
 SectorsPerTrack         dw 18
 NumberOfHeads           dw 2
@@ -64,51 +64,58 @@ step2:
 [BITS 16]
 ;-----------------E820-----------------
 do_e820:
-mov di, 0x604         ; Set di to 0x8004. Otherwise this code will get stuck in `int 0x15` after some entries are fetched 
-	xor ebx, ebx		; ebx must be 0 to start
-	xor bp, bp		; keep an entry count in bp
-	mov edx, 0x0534D4150	; Place "SMAP" into edx
-	mov eax, 0xe820
-	mov [es:di + 20], dword 1	; force a valid ACPI 3.X entry
-	mov ecx, 24		; ask for 24 bytes
-	int 0x15
-	jc short .failed	; carry set on first call means "unsupported function"
-	mov edx, 0x0534D4150	; Some BIOSes apparently trash this register?
-	cmp eax, edx		; on success, eax must have been reset to "SMAP"
-	jne short .failed
-	test ebx, ebx		; ebx = 0 implies list is only 1 entry long (worthless)
-	je short .failed
-	jmp short .jmpin
+    mov di, 0x604              ; Buffer location: ES:0x604
+    xor ebx, ebx               ; Start fresh — ebx=0 means "first call"
+    xor bp, bp                 ; bp counts entries we've kept
+    mov edx, 0x0534D4150       ; "SMAP" magic
+    mov eax, 0xe820            ; Function code
+    mov [es:di + 20], dword 1  ; Force ACPI 3.x "valid" bit (some BIOSes ignore)
+    mov ecx, 24                ; Buffer is 24 bytes
+    int 0x15                   ; Call BIOS
+
+    jc short .failed           ; Carry set on FIRST call = "E820 not supported"
+    mov edx, 0x0534D4150       ; Restore SMAP (some BIOSes clobber edx)
+    cmp eax, edx               ; eax should now be "SMAP"
+    jne short .failed
+    test ebx, ebx              ; ebx = 0 means "list is just 1 entry" — useless
+    je short .failed
+    jmp short .jmpin           ; Skip past the loop setup to entry processing
+
 .e820lp:
-	mov eax, 0xe820		; eax, ecx get trashed on every int 0x15 call
-	mov [es:di + 20], dword 1	; force a valid ACPI 3.X entry
-	mov ecx, 24		; ask for 24 bytes again
-	int 0x15
-	jc short .e820f		; carry set means "end of list already reached"
-	mov edx, 0x0534D4150	; repair potentially trashed register
+    mov eax, 0xe820                    ; eax gets trashed, restore it
+    mov [es:di + 20], dword 1          ; Re-prime the valid bit
+    mov ecx, 24                        ; Re-prime buffer size
+    int 0x15
+    jc short .e820f                    ; Carry now = "end of list" (not error)
+    mov edx, 0x0534D4150               ; Restore SMAP 
+
 .jmpin:
-	jcxz .skipent		; skip any 0 length entries
-	cmp cl, 20		; got a 24 byte ACPI 3.X response?
-	jbe short .notext
-	test byte [es:di + 20], 1	; if so: is the "ignore this data" bit clear?
-	je short .skipent
+    jcxz .skipent              ; If cx = 0, BIOS wrote nothing → skip
+    cmp cl, 20                 ; Did BIOS write 24 bytes (ACPI 3.x) or just 20?
+    jbe short .notext          ; If ≤ 20, no extended attributes — just process it
+    test byte [es:di + 20], 1  ; Otherwise check the "valid" bit
+    je short .skipent          ; If valid bit clear → BIOS says ignore this entry
+
 .notext:
-	mov ecx, [es:di + 8]	; get lower uint32_t of memory region length
-	or ecx, [es:di + 12]	; "or" it with upper uint32_t to test for zero
-	jz .skipent		; if length uint64_t is 0, skip entry
-	inc bp			; got a good entry: ++count, move to next storage spot
-	add di, 24
+    mov ecx, [es:di + 8]       ; Low 32 bits of length
+    or ecx, [es:di + 12]       ; OR with high 32 bits
+    jz .skipent                ; If length is 0 → skip
+    inc bp                     ; Good entry — increment count
+    add di, 24                 ; Move buffer pointer to next slot
+
 .skipent:
-	test ebx, ebx		; if ebx resets to 0, list is complete
-	jne short .e820lp
+    test ebx, ebx              ; If ebx = 0, BIOS signaled "this was the last"
+    jne short .e820lp          ; Otherwise loop
+
 .e820f:
-	mov [es:mmap_ent], bp	; store the entry count
-	clc			; there is "jc" on end of list to this point, so the carry must be cleared
-	ret
+    mov [es:mmap_ent], bp      ; Save final entry count to memory
+    clc                        ; Clear carry → success
+    ret
+
 .failed:
-	stc			; "function unsupported" error exit
-	ret
- ;----------------------------------------------------
+    stc                        ; Set carry → failure
+    ret 
+;----------------------------------------------------
 
 ; GDT
 gdt_start:
@@ -119,21 +126,21 @@ gdt_start:
   ; offset 0x8
 
   gdt_code: ; code descriptor
-      dw 0xffff ; segment limit first 0-15 bits LIMIT
+      dw 0xfffff ; segment limit first 0-15 bits LIMIT
       dw 0      ; base first 0 -15 bits BASE 
       db 0      ; Base 16 -23 bits
-      db 0x9a   ;Acess byte (10011010) 
+      db 0x9a   ;Acess byte (10011010) (1) present (00) DPL (1) type (code or data) (1) executable (0) direction grows up (1) R/W (write never allowed) (0) Acess bit
       db 11001111b ;High 4 bit flags and the low 4 bit flags
       db 0        ; Base 24-31 bits BASE 
 
   ; offset 0x10 
 
   gdt_data:       ; DS, SS, ES , FS , GS. data descriptor
-      dw 0xffff ; segment limit first 0-15 bits
+      dw 0xfffff ; segment limit first 0-15 bits
       dw 0      ; base first 0 -15 bits
       db 0      ; Base 16 -23 bits
       db 0x92   ;Acess byte (10010010)
-      db 11001111b ;High 4 bit flags and the low 4 bit flags
+      db 11001111b ;High 4 bit flags and the low 4 bit flags (1) Gnaluar (1) 32 bit (0) not long mode (0) reserved / padding
       db 0        ; Base 24-31 bits
 
   ;Can have TSS (task state segment descriptor) totaly optional
@@ -193,7 +200,7 @@ ata_lba_read:
     ;Finished sending upper bits of the LBA
 
     mov dx, 0x1F7
-    mov al, 0x20
+    mov al, 0x20 ;read
     out dx, al
 
   ;Read all secotrs to the memory
@@ -205,13 +212,13 @@ ata_lba_read:
   .try_again:
     mov dx, 0x1f7
     in al, dx
-    test al, 8
+    test al, 8 ;checks the 3rd bit for if data ready
     jz .try_again
 
   ;need to read 256 words at a time
-    mov ecx, 256
+    mov ecx, 256 ;512 bytes
     mov dx, 0x1f0
-    rep insw ;reads a word from I/O port in dx into edi register
+    rep insw ;reads 256 words from I/O port in dx into edi register
     pop ecx
     loop .next_sector
     ;End of reading sectors into memory

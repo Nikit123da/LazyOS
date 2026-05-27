@@ -5,7 +5,7 @@
 typedef struct {
   uint32_t ds;
   uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; // pusha
-  uint32_t int_no, err_code;                       // Pushed by our ISR
+  uint32_t int_no, err_code;                       // Pushed by the ISR
   uint32_t eip, cs, eflags, ss;                    // Pushed by CPU
 } registers_t;
 

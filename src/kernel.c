@@ -22,35 +22,38 @@ void proc_a_entry(void) {
   print("\nstarting process A\n");
   setLock(&shared_lock); // lock the lock
 
-  for (int i = 0; i < 50; i++) {
-    print("A");
+  for (int i = 0; i < 5; i++) {
+    print("A ");
     shared_variable++; // modify the data
     print_digit(shared_variable);
-    sleep(4000); // outside the lock — good
+    print(" ");
+    sleep(2000); // outside the lock — good
   }
   releaseLock(&shared_lock); // unlock the lock
 }
 
 void proc_b_entry(void) {
   print("\nstarting process B\n");
-  // setLock(&shared_lock); // lock the lock
+  setLock(&shared_lock); // lock the lock
 
-  for (int i = 0; i < 50; i++) {
-    print("B");
-    // shared_variable--; // modify the data
-    // print_digit(shared_variable);
-    sleep(4000);
+  for (int i = 0; i < 20; i++) {
+    print("B ");
+    shared_variable--; // modify the data
+    print_digit(shared_variable);
+    print(" ");
+    sleep(2000);
   }
-  // releaseLock(&shared_lock); // unlock the lock
+  releaseLock(&shared_lock); // unlock the lock
 }
 
 void proc_c_entry(void) {
   print("\nstarting process C\n");
   for (int i = 0; i < 100; i++) {
-    print("C");
+    print("C ");
     int something = 5 / 0;
-    if (something)
-      sleep(4000);
+    if (something) {
+    }
+    sleep(400);
   }
 }
 
